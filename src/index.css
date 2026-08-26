@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    direction: rtl;
+    text-align: right;
+  }
+
+  body {
+    font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #FFFFFF;
+    color: #5B3C43;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    color: #426B4B;
+  }
+}
+
+@keyframes float-sparkle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) rotate(12deg) scale(1.1);
+  }
+}
+
+@keyframes soft-pulse {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.animate-float-sparkle {
+  animation: float-sparkle 3s ease-in-out infinite;
+}
+
+.animate-soft-pulse {
+  animation: soft-pulse 2.5s ease-in-out infinite;
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FFFFFF;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #426B4B;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6F9476;
+}
+
+/* ---- COLOR SYSTEM OVERRIDES PER USER REQUEST ---- */
+:root {
+  --bg-main: #FFFFFF;
+  --green-very-light: #E8F2E9;
+  --green-pastel: #C9DEC9;
+  --green-sage: #9EB39F;
+  --green-medium: #6F9476;
+  --green-deep: #426B4B;
+
+  --pink-very-light: #FBE8EE;
+  --pink-pastel: #F4C7D5;
+  --pink-medium: #E6A1B5;
+  --pink-strong: #C96F89;
+  --pink-deep: #9E4D68;
+
+  --text-primary: #5B3C43;
+  --text-muted: #7A5B64;
+  --border-subtle: #C9DEC9;
+}
+
+body {
+  background-color: var(--bg-main) !important;
+  background-image: none !important;
+  color: var(--text-primary) !important;
+}
+
+.card-surface {
+  background-color: #E8F2E9 !important;
+  border: 1px solid #C9DEC9 !important;
+  border-radius: 1.25rem !important; 
+  box-shadow: 0 4px 20px rgba(66, 107, 75, 0.05) !important;
+  color: #5B3C43 !important;
+}
+
+/* Alternate mental support cards with soft pink */
+.card-support, .card-motivation {
+  background-color: #FBE8EE !important;
+  border: 1px solid #F4C7D5 !important;
+}
+
+.btn-primary {
+  background-color: #426B4B !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 1rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px rgba(66, 107, 75, 0.25) !important;
+}
+.btn-primary:hover {
+  background-color: #6F9476 !important;
+  transform: translateY(-1px);
+}
+
+.btn-pink, .btn-support {
+  background-color: #9E4D68 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border: none !important;
+  border-radius: 1rem !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px rgba(158, 77, 104, 0.25) !important;
+}
+.btn-pink:hover, .btn-support:hover {
+  background-color: #C96F89 !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #E8F2E9 !important;
+  color: #426B4B !important;
+  border: 1px solid #C9DEC9 !important;
+  border-radius: 1rem !important;
+  transition: all 0.2s ease !important;
+}
+.btn-secondary:hover {
+  background-color: #C9DEC9 !important;
+  color: #426B4B !important;
+}
+
+.pink-purple-gradient, .bg-gradient-to-r, .bg-gradient-to-br, .bg-gradient-to-tr {
+  background: linear-gradient(135deg, #E8F2E9, #FBE8EE) !important;
+  border: 1px solid #C9DEC9 !important;
+}
+
+/* Muted Tags using Green & Pink palette */
+.tag-sage-green { background-color: #C9DEC9 !important; color: #426B4B !important; border: 1px solid #9EB39F !important; font-weight: 600 !important; }
+.tag-dusty-rose { background-color: #F4C7D5 !important; color: #9E4D68 !important; border: 1px solid #E6A1B5 !important; font-weight: 600 !important; }
+.tag-dusty-blue { background-color: #E8F2E9 !important; color: #426B4B !important; border: 1px solid #C9DEC9 !important; font-weight: 600 !important; }
+
+/* Force standard inputs */
+input, select, textarea {
+  background-color: #FFFFFF !important;
+  color: #5B3C43 !important;
+  border: 1px solid #C9DEC9 !important;
+  border-radius: 0.75rem !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: #426B4B !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(66, 107, 75, 0.2) !important;
+}
+
+/* Map old color classes (like #D15F70 or purple/amber/emerald) to our new Green & Pink palette */
+.text-\\[\\#D15F70\\] { color: #9E4D68 !important; }
+.bg-\\[\\#D15F70\\] { background-color: #9E4D68 !important; }
+.border-\\[\\#D15F70\\] { border-color: #9E4D68 !important; }
+.hover\\:border-\\[\\#D15F70\\]\\/50:hover { border-color: rgba(158, 77, 104, 0.5) !important; }
+.hover\\:text-\\[\\#D15F70\\]:hover { color: #9E4D68 !important; }
+.focus\\:border-\\[\\#D15F70\\]:focus { border-color: #426B4B !important; }
+
+.bg-\\[\\#D15F70\\]\\/10 { background-color: rgba(158, 77, 104, 0.12) !important; }
+.bg-\\[\\#D15F70\\]\\/20 { background-color: rgba(158, 77, 104, 0.2) !important; }
+.bg-\\[\\#D15F70\\]\\/5 { background-color: rgba(158, 77, 104, 0.05) !important; }
+.border-\\[\\#D15F70\\]\\/20 { border-color: rgba(158, 77, 104, 0.2) !important; }
+.border-\\[\\#D15F70\\]\\/30 { border-color: rgba(158, 77, 104, 0.3) !important; }
+
+/* Icon Pastel Colors mapped to request */
+.icon-bg-lavender { background-color: #F4C7D5 !important; }
+.icon-text-lavender { color: #9E4D68 !important; }
+
+.icon-bg-peach { background-color: #FBE8EE !important; }
+.icon-text-peach { color: #C96F89 !important; }
+
+.icon-bg-coral { background-color: #9E4D68 !important; }
+.icon-text-coral { color: #FFFFFF !important; }
+
+.icon-bg-mint { background-color: #9EB39F !important; }
+.icon-text-mint { color: #FFFFFF !important; }
+
+.icon-bg-gold { background-color: #C9DEC9 !important; }
+.icon-text-gold { color: #426B4B !important; }
+
+.icon-bg-blue { background-color: #E8F2E9 !important; }
+.icon-text-blue { color: #426B4B !important; }
+
+

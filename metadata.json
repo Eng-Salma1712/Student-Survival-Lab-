@@ -1,0 +1,6 @@
+{
+  "name": "Student Survival Lab - Just Start",
+  "description": "Student Survival AI - Academic & Spiritual Assistant for students: Rescue mode, PDF/Image analysis, smart study plans, flashcards, and weekly achievement certificates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
