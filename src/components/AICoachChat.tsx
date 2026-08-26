@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserIdentity, StudentGoal, ChatAttachment } from '../types';
 import {
   Send,
