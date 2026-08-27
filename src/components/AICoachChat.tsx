@@ -89,6 +89,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
   onClose,
   isFloatingDrawer = false,
 }) => {
+  const navigate = useNavigate();
   const titleInfo = getTitleInfo(userIdentity);
   const studentName = userIdentity?.name || 'يا بطل';
   const collegeName = goal?.targetTitle || userIdentity?.collegeName || 'كلية الأحلام والقمة';
@@ -190,6 +191,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
     setIsLoading(true);
 
     try {
+      console.log('Sending chat request to /api/chat...');
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,8 +211,12 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
         }),
       });
 
+      console.log('Chat API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`Server status ${response.status}`);
+        const errorText = await response.text();
+        console.error('Chat API Error - Status:', response.status, 'Body:', errorText);
+        throw new Error(`Server status ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
@@ -225,14 +231,15 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
 
         setMessages((prev) => [...prev, botMessage]);
       } else {
+        console.error('Chat API returned 200 but no reply field:', data);
         throw new Error('No reply in response');
       }
-    } catch (err) {
-      console.warn('Backend API chat error:', err);
+    } catch (err: any) {
+      console.error('Backend API chat error:', err);
       const botMessage: ChatMessage = {
         id: `bot-${Date.now()}`,
         role: 'model',
-        text: 'عذراً، يبدو أن هناك مشكلة مؤقتة في الاتصال. يرجى المحاولة مرة أخرى.',
+        text: `عذراً، يبدو أن هناك مشكلة مؤقتة في الاتصال. تفاصيل الخطأ: ${err.message || err}`,
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, botMessage]);

@@ -7,6 +7,11 @@ import { StudentInput } from './src/types';
 const app = express();
 const PORT = 3000;
 
+app.use((req, res, next) => {
+  console.log(`[Express] Received request: ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -173,7 +178,7 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -276,7 +281,7 @@ Student Data Input:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,
