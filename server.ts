@@ -2,7 +2,7 @@ import webpush from "web-push";
 import express from 'express';
 import path from 'path';
 import { GoogleGenAI, Type } from '@google/genai';
-import { StudentInput } from './src/types';
+import type { StudentInput } from './src/types.js';
 
 const app = express();
 const PORT = 3000;
