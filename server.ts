@@ -12,19 +12,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-    // Vercel already parsed the body
-    return next();
-  }
-  express.json({ limit: '50mb' })(req, res, next);
-});
-app.use((req, res, next) => {
-  if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-    return next();
-  }
-  express.urlencoded({ limit: '50mb', extended: true })(req, res, next);
-});
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Initialize Gemini Client safely
 let aiClient: GoogleGenAI | null = null;
@@ -189,7 +178,7 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -292,7 +281,7 @@ Student Data Input:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,
