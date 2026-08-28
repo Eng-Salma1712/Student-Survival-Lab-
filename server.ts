@@ -81,6 +81,11 @@ Output Structure (ALL TEXT IN ARABIC):
 - adaptiveInsights: Array of 2-4 strings in Arabic summarizing how the adaptive engine tailored the plan.
 `;
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', model: 'gemini-3.6-flash' });
+});
+
 // AI Study Coach Route
 app.post('/api/chat', async (req, res) => {
   try {
@@ -182,7 +187,7 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -289,7 +294,7 @@ Student Data Input:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,
