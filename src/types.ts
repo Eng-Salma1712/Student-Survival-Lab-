@@ -41,6 +41,10 @@ export interface StudentInput {
   learningPreference: LearningPreference;
   planPreference: PlanPreference;
   additionalNotes?: string;
+  studentStage?: EducationStage;
+  studentTrack?: SecondaryTrack;
+  studentGrade?: string;
+  targetGoal?: string;
 }
 
 export interface StudySession {
@@ -88,6 +92,7 @@ export interface StudentGoal {
   importanceReason: string; // e.g. "علشان أفرح أمي وأبويا وأحقق حلم طفولتي"
   targetExamDate: string; // YYYY-MM-DD
   createdAt: number;
+  percentageGoal?: string;
 }
 
 export interface Badge {
@@ -103,6 +108,18 @@ export interface Badge {
 
 export type Gender = 'female' | 'male';
 
+export type EducationStage = 'prep' | 'secondary'; // إعدادي | ثانوي
+
+export type SecondaryTrack = 'scientific' | 'literary'; // علمي | أدبي
+
+export type GradeYear =
+  | 'prep_1'
+  | 'prep_2'
+  | 'prep_3'
+  | 'sec_1'
+  | 'sec_2'
+  | 'sec_3';
+
 export type CollegeCategory =
   | 'medicine'
   | 'engineering'
@@ -116,6 +133,10 @@ export interface UserIdentity {
   gender: Gender;
   category: CollegeCategory;
   collegeName: string;
+  stage?: EducationStage;
+  track?: SecondaryTrack;
+  grade?: GradeYear | string;
+  gradeLabel?: string;
 }
 
 export interface GamificationState {

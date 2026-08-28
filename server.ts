@@ -33,9 +33,9 @@ function getGeminiClient(): GoogleGenAI | null {
 
 // System Prompt for AI Engine as specified in user guidelines
 const SYSTEM_PROMPT = `
-You are an expert Educational Psychologist and AI Adaptive Study Coach for Egyptian Thanaweya Amma high school students.
-Analyze the student's input data and performance state from the Questions Page and generate a highly personalized, adaptive, situation-aware result.
-IMPORTANT: ALL text fields in the output JSON (diagnosis, whyThisPlan, todaysGoal, studyPlan titles, focusTypes, notes, priorities, smartTips, motivationalMessage, adaptiveInsights) MUST be in fluent, natural, empathetic ARABIC.
+You are an expert Educational Psychologist and AI Adaptive Study Coach for Egyptian school and high school students (covering both المرحلة الإعدادية and المرحلة الثانوية - علمي وأدبي).
+Analyze the student's input data, educational stage, grade year, and performance state from the Questions Page and generate a highly personalized, adaptive, situation-aware result.
+IMPORTANT: ALL text fields in the output JSON (diagnosis, whyThisPlan, todaysGoal, studyPlan titles, focusTypes, notes, priorities, smartTips, motivationalMessage, adaptiveInsights) MUST be in fluent, natural, empathetic ARABIC tailored to their specific educational stage and target goal.
 
 ---
 Inputs to analyze:
@@ -99,6 +99,9 @@ app.post('/api/chat', async (req, res) => {
     const studentName = studentContext?.name || 'يا بطل';
     const studentGoal = studentContext?.goalTitle || studentContext?.collegeName || 'كلية الأحلام';
     const gender = studentContext?.gender || 'female';
+    const stage = studentContext?.stage === 'prep' ? 'المرحلة الإعدادية' : 'المرحلة الثانوية';
+    const track = studentContext?.track ? (studentContext.track === 'scientific' ? 'شعبة علمي' : 'شعبة أدبي') : '';
+    const grade = studentContext?.gradeLabel || studentContext?.grade || '';
 
     const coachSystemInstruction = `
 # STUDENT SURVIVAL LAB — MASTER AI SYSTEM PROMPT
@@ -108,7 +111,8 @@ You are the Student Survival Lab AI Assistant. You are an intelligent, conversat
 
 Student Context:
 - Student Name: ${studentName} (${gender === 'female' ? 'طالبة' : 'طالب'})
-- Target / Dream College: ${studentGoal}
+- Educational Stage: ${stage} ${track ? `(${track})` : ''} ${grade ? `- ${grade}` : ''}
+- Target / Dream College / Goal: ${studentGoal}
 
 ## CAPABILITIES & FLEXIBILITY
 You are a genuinely conversational AI. 
@@ -178,7 +182,7 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -266,6 +270,10 @@ app.post('/api/generate-plan', async (req, res) => {
 
     const promptText = `
 Student Data Input:
+- Educational Stage: ${input.studentStage === 'prep' ? 'المرحلة الإعدادية' : 'المرحلة الثانوية'}
+- Track: ${input.studentTrack ? (input.studentTrack === 'scientific' ? 'شعبة علمي' : 'شعبة أدبي') : 'غير محدد'}
+- Grade / Year: ${input.studentGrade || 'الثانوية العامة'}
+- Target Goal / College: ${input.targetGoal || 'كلية الأحلام'}
 - Psychological State: ${input.psychologicalState}
 - Focus Level (1-5): ${input.focusLevel}
 - Stress Level (1-5): ${input.stressLevel}
@@ -281,7 +289,7 @@ Student Data Input:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-2.5-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,

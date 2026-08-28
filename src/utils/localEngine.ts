@@ -276,14 +276,18 @@ export function generateLocalDiagnosis(input: StudentInput): DiagnosisResult {
   adaptiveInsights.push(`🔄 **الجدولة التكيفية المتنوعة (Interleaving)**: تناوب المواد يمنع التكرار الرتيب يومياً ويحفز الذاكرة الأطول مدى.`);
 
   // 8. Smart Tips
+  const stageName = input.studentStage === 'prep' ? 'المرحلة الإعدادية' : 'المرحلة الثانوية';
+  const gradeTitle = input.studentGrade || (input.studentStage === 'prep' ? 'الشهادة الإعدادية' : 'الثانوية العامة');
+  const targetCollegeOrGoal = input.targetGoal || (input.studentStage === 'prep' ? 'التفوق ومدارس STEM' : 'كلية أحلامك');
+
   const smartTips: string[] = [
-    '💡 التكرار المتباعد والتنويع بين المواد (Interleaving) يرفع نسبة تثبيت المعلومات في امتحانات الثانوية العامة بـ 40%.',
-    '📱 ابعد الموبايل عن مكتبك خلال الجلسة، والتركيز العالي لمدة 60 دقيقة أفضل بكثير من ساعات تشتت.',
-    '📝 دون أخطاءك في كشكول خاص للأنماط والأسئلة المتكررة في امتحانات السنوات السابقة.',
+    `💡 التكرار المتباعد والتنويع بين المواد (Interleaving) يرفع نسبة تثبيت واستيعاب المعلومات في امتحانات ${gradeTitle} بنسبة تتجاوز 40%.`,
+    '📱 ابعد الموبايل عن مكتبك تماماً خلال الجلسة، والتركيز العالي لمدة 50 دقيقة أفضل بكثير من ساعات طويلة مشتتة.',
+    `📝 دون أخطاءك في كشكول خاص للأنماط والأسئلة المتكررة لضمان تفوقك والوصول إلى ${targetCollegeOrGoal}.`,
   ];
 
-  // 9. Thanaweya Amma Motivational Message
-  const motivationalMessage = `أنا فخورة بيك وبسعيك اليوم! الثانوية العامة مش بعبع، دي خطوة واحدة بتصنع مستقبلك والكلية اللي بتتمناها. افتكر دايماً فرحة يوم النتيجة، العزيمة أقوى من أي تعب! كمل وستصل لحلمك بإذن الله 💪✨`;
+  // 9. Personalized Motivational Message
+  const motivationalMessage = `أنا فخورة بيك وبسعيك اليوم! مرحلة ${gradeTitle} خطوة حقيقية ومفصلية بتصنع مستقبلك وتقربك من هدفك في ${targetCollegeOrGoal}. افتكر دايماً فرحة يوم النتيجة وفخر أهلك بيك، العزيمة أقوى من أي تعب! كمل وستصل لحلمك بإذن الله 💪✨`;
 
   return {
     id: `diagnosis-${Date.now()}`,

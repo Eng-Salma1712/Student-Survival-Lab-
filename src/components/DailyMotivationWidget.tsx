@@ -45,7 +45,17 @@ export const DailyMotivationWidget: React.FC<DailyMotivationWidgetProps> = ({ us
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const titleInfo = getTitleInfo(userIdentity);
 
-  const currentTip = DAILY_TIPS[tipIndex % DAILY_TIPS.length];
+  const isFemale = userIdentity?.gender === 'female';
+  const stageName = userIdentity?.stage === 'prep' ? 'المرحلة الإعدادية' : 'المرحلة الثانوية';
+  const targetName = userIdentity?.collegeName || (userIdentity?.stage === 'prep' ? 'التفوق ومدارس المتفوقين' : 'كلية الأحلام');
+
+  const currentTipRaw = DAILY_TIPS[tipIndex % DAILY_TIPS.length];
+  const currentQuote = currentTipRaw.quote
+    .replace('الثانوية', stageName)
+    .replace(/تذكري/g, isFemale ? 'تذكري' : 'تذكر')
+    .replace(/ابدئي/g, isFemale ? 'ابدئي' : 'ابدأ')
+    .replace(/تضعينها/g, isFemale ? 'تضعينها' : 'تضعها')
+    .replace(/تقعين/g, isFemale ? 'تقعين' : 'تقع');
 
   return (
     <div className="w-full bg-white bg-white border border-slate-200 dark:border-[#E5E5E5] rounded-3xl p-5 sm:p-6 shadow-2xs relative overflow-hidden dir-rtl transition-all duration-300" dir="rtl">
@@ -59,7 +69,7 @@ export const DailyMotivationWidget: React.FC<DailyMotivationWidgetProps> = ({ us
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                  {currentTip.category}
+                  {currentTipRaw.category}
                 </span>
               </div>
               <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-[#2A2A2A] font-heading pt-0.5">
@@ -93,13 +103,13 @@ export const DailyMotivationWidget: React.FC<DailyMotivationWidgetProps> = ({ us
         {!isCollapsed && (
           <div className="bg-slate-50 bg-[#F5F5F5]/60 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-[#E5E5E5] space-y-2 animate-in fade-in duration-200">
             <div className="flex items-start gap-3">
-              <span className="text-xl shrink-0">{currentTip.emoji}</span>
+              <span className="text-xl shrink-0">{currentTipRaw.emoji}</span>
               <div className="space-y-1">
                 <p className="text-xs sm:text-sm text-slate-900 text-[#2A2A2A] font-extrabold leading-relaxed">
-                  "{currentTip.quote}"
+                  "{currentQuote}"
                 </p>
                 <p className="text-[11px] text-purple-700 dark:text-purple-300 font-bold pt-1">
-                  — خطوة بخطوة نحو تحقيق حلمكِ في {userIdentity?.collegeName || 'كلية الأحلام'}.
+                  — خطوة بخطوة نحو تحقيق {isFemale ? 'حلمكِ' : 'حلمك'} في {targetName}.
                 </p>
               </div>
             </div>

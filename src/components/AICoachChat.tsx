@@ -204,6 +204,10 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
           studentContext: {
             name: studentName,
             gender: userIdentity?.gender || 'female',
+            stage: userIdentity?.stage || 'secondary',
+            track: userIdentity?.track,
+            grade: userIdentity?.grade,
+            gradeLabel: userIdentity?.gradeLabel,
             goalTitle: goal?.targetTitle,
             collegeName: collegeName,
             currentMode: selectedMode,

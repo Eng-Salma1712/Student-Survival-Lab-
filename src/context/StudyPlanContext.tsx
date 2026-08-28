@@ -68,6 +68,31 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
         ? 'تعب خفيف وطاقة متوسطة'
         : 'طاقة ممتازة وجاهز للمذاكرة المكثفة';
 
+    let studentStage: any = 'secondary';
+    let studentTrack: any = 'scientific';
+    let studentGrade = 'sec_3';
+    let studentGradeLabel = 'الصف الثالث الثانوي';
+    let targetGoal = 'كلية الأحلام';
+
+    try {
+      const savedId = localStorage.getItem('thanaweya_user_identity');
+      if (savedId) {
+        const parsed = JSON.parse(savedId);
+        if (parsed.stage) studentStage = parsed.stage;
+        if (parsed.track) studentTrack = parsed.track;
+        if (parsed.grade) studentGrade = parsed.grade;
+        if (parsed.gradeLabel) studentGradeLabel = parsed.gradeLabel;
+        if (parsed.collegeName) targetGoal = parsed.collegeName;
+      }
+      const savedGoal = localStorage.getItem('student_goal');
+      if (savedGoal) {
+        const parsedG = JSON.parse(savedGoal);
+        if (parsedG.targetTitle) targetGoal = parsedG.targetTitle;
+      }
+    } catch {
+      // fallback to defaults
+    }
+
     return {
       isExhausted,
       psychologicalState: psychStateText,
@@ -84,6 +109,10 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
       learningPreference,
       planPreference,
       additionalNotes: additionalNotes.trim() ? additionalNotes.trim() : undefined,
+      studentStage,
+      studentTrack,
+      studentGrade: studentGradeLabel || studentGrade,
+      targetGoal,
     };
   };
 

@@ -10,6 +10,7 @@ import { StudySchedulePage } from './pages/StudySchedulePage';
 import { GoalPage } from './pages/GoalPage';
 import { AICoachPage } from './pages/AICoachPage';
 import { AchievementsPage } from './pages/AchievementsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { SpiritualPage } from './pages/SpiritualPage';
 import { StudyPlanProvider } from './context/StudyPlanContext';
 import { ToastProvider } from './context/ToastContext';
@@ -26,9 +27,29 @@ export default function App() {
   const [identity, setIdentity] = useState<UserIdentity | null>(() => {
     try {
       const saved = localStorage.getItem('thanaweya_user_identity');
-      return saved ? JSON.parse(saved) : { name: 'سلمى', gender: 'female', category: 'medicine', collegeName: 'كلية الطب البشري' };
+      return saved
+        ? JSON.parse(saved)
+        : {
+            name: 'سلمى',
+            gender: 'female',
+            category: 'medicine',
+            collegeName: 'كلية الطب البشري',
+            stage: 'secondary',
+            track: 'scientific',
+            grade: 'sec_3',
+            gradeLabel: 'الصف الثالث الثانوي (الثانوية العامة)',
+          };
     } catch {
-      return { name: 'سلمى', gender: 'female', category: 'medicine', collegeName: 'كلية الطب البشري' };
+      return {
+        name: 'سلمى',
+        gender: 'female',
+        category: 'medicine',
+        collegeName: 'كلية الطب البشري',
+        stage: 'secondary',
+        track: 'scientific',
+        grade: 'sec_3',
+        gradeLabel: 'الصف الثالث الثانوي (الثانوية العامة)',
+      };
     }
   });
 
@@ -99,13 +120,13 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
         <StudyPlanProvider>
           <AppContent>
           
-          <Header userIdentity={identity} />
+          <Header userIdentity={identity} gamification={gamification} />
 
           <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-20 relative z-10">
             <Routes>
               <Route path="/" element={<Dashboard gamification={gamification} goal={goal} onSaveGoal={handleSaveGoal} history={history} currentResult={currentResult} userIdentity={identity} />} />
               <Route path="/assessment" element={<DailyAssessmentPage userIdentity={identity} history={history} currentResult={currentResult} />} />
-              <Route path="/subjects" element={<SubjectsLessonsPage />} />
+              <Route path="/subjects" element={<SubjectsLessonsPage userIdentity={identity} />} />
               <Route path="/schedule" element={
                 <StudySchedulePage 
                   currentResult={currentResult} 
@@ -118,7 +139,15 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
               <Route path="/goal" element={<GoalPage goal={goal} onSaveGoal={handleSaveGoal} userIdentity={identity} />} />
               <Route path="/coach" element={<AICoachPage userIdentity={identity} goal={goal} />} />
               <Route path="/spiritual" element={<SpiritualPage />} />
-              <Route path="/achievements" element={<AchievementsPage gamification={gamification} userIdentity={identity} onSaveIdentity={setIdentity} />} />
+              <Route path="/achievements" element={<AchievementsPage gamification={gamification} />} />
+              <Route path="/profile" element={
+                <ProfilePage 
+                  userIdentity={identity} 
+                  onSaveIdentity={setIdentity}
+                  goal={goal}
+                  onSaveGoal={handleSaveGoal}
+                />
+              } />
             </Routes>
           </main>
 
