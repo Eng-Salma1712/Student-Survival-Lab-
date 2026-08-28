@@ -7,6 +7,7 @@ import { GoalCompletionModal } from './GoalCompletionModal';
 import { SkippedWarningBanner } from './SkippedWarningBanner';
 import { TimetableScheduleView } from './TimetableScheduleView';
 import { useToast } from '../context/ToastContext';
+import { notifyDailyAchievementChange } from '../utils/dailyAchievementTracker';
 import confetti from 'canvas-confetti';
 import {
   Brain,
@@ -174,8 +175,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
   const toggleSessionCompletion = (sessionId: string) => {
     let newlyCompletedSession: StudySession | null = null;
-    setSessions((prev) =>
-      prev.map((s) => {
+    let updatedSessions: StudySession[] = [];
+
+    setSessions((prev) => {
+      const next = prev.map((s) => {
         if (s.id === sessionId) {
           const nextCompleted = !s.completed;
           if (nextCompleted) {
@@ -184,8 +187,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
           return { ...s, completed: nextCompleted };
         }
         return s;
-      })
-    );
+      });
+      updatedSessions = next;
+      return next;
+    });
+
+    onSavePlan({ ...result, studyPlan: updatedSessions });
+    notifyDailyAchievementChange();
 
     if (newlyCompletedSession) {
       confetti({

@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, Sun, BookOpen, Heart, CheckCircle2, Circle, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Clock, Compass } from 'lucide-react';
+import { Moon, Sun, BookOpen, Heart, CheckCircle2, Circle, ChevronDown, ChevronUp, Eye, EyeOff, Sparkles, Clock, Compass, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import {
+  getDailyPrayers,
+  setPrayerStatus,
+  setAllPrayersStatus,
+  getDailyQuranStatus,
+  setDailyQuranStatus,
+  getDailyAdhkarStatus,
+  setDailyAdhkarStatus,
+  DAILY_ACHIEVEMENT_EVENT,
+} from '../utils/dailyAchievementTracker';
 
 interface SpiritualTask {
   id: string;
@@ -70,22 +80,56 @@ export const SpiritualHabitsWidget: React.FC = () => {
   const [tasks, setTasks] = useState<SpiritualTask[]>(() => {
     try {
       const saved = localStorage.getItem('thanaweya_spiritual_tasks');
+      const qDone = getDailyQuranStatus();
+      const aDone = getDailyAdhkarStatus();
+      const p = getDailyPrayers();
+      const pAll = p.fajr && p.dhuhr && p.asr && p.maghrib && p.isha;
+
       if (saved) {
         const parsed: SpiritualTask[] = JSON.parse(saved);
-        // check if date is today, if not reset completed status
-        const lastDate = localStorage.getItem('thanaweya_spiritual_last_date');
-        const todayStr = new Date().toDateString();
-        if (lastDate !== todayStr) {
-          localStorage.setItem('thanaweya_spiritual_last_date', todayStr);
-          return parsed.map((t) => ({ ...t, completed: false }));
-        }
-        return parsed;
+        return parsed.map((t) => {
+          if (t.id === 'quran_wird') return { ...t, completed: qDone };
+          if (t.id === 'adhkar_sabah') return { ...t, completed: aDone.morning };
+          if (t.id === 'adhkar_massa') return { ...t, completed: aDone.evening };
+          if (t.id === 'prayers_on_time') return { ...t, completed: pAll };
+          return t;
+        });
       }
-      return DEFAULT_SPIRITUAL_TASKS;
+      return DEFAULT_SPIRITUAL_TASKS.map((t) => {
+        if (t.id === 'quran_wird') return { ...t, completed: qDone };
+        if (t.id === 'adhkar_sabah') return { ...t, completed: aDone.morning };
+        if (t.id === 'adhkar_massa') return { ...t, completed: aDone.evening };
+        if (t.id === 'prayers_on_time') return { ...t, completed: pAll };
+        return t;
+      });
     } catch {
       return DEFAULT_SPIRITUAL_TASKS;
     }
   });
+
+  const [prayers, setPrayers] = useState(getDailyPrayers);
+
+  useEffect(() => {
+    const handleSync = () => {
+      const p = getDailyPrayers();
+      setPrayers(p);
+      const qDone = getDailyQuranStatus();
+      const aDone = getDailyAdhkarStatus();
+      const pAll = p.fajr && p.dhuhr && p.asr && p.maghrib && p.isha;
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === 'quran_wird') return { ...t, completed: qDone };
+          if (t.id === 'adhkar_sabah') return { ...t, completed: aDone.morning };
+          if (t.id === 'adhkar_massa') return { ...t, completed: aDone.evening };
+          if (t.id === 'prayers_on_time') return { ...t, completed: pAll };
+          return t;
+        })
+      );
+    };
+
+    window.addEventListener(DAILY_ACHIEVEMENT_EVENT, handleSync);
+    return () => window.removeEventListener(DAILY_ACHIEVEMENT_EVENT, handleSync);
+  }, []);
 
   useEffect(() => {
     try {
@@ -115,7 +159,16 @@ export const SpiritualHabitsWidget: React.FC = () => {
     }
 
     setTasks((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+      const target = prev.find((t) => t.id === id);
+      const nextVal = !target?.completed;
+      
+      // Update global tracker
+      if (id === 'quran_wird') setDailyQuranStatus(nextVal);
+      if (id === 'adhkar_sabah') setDailyAdhkarStatus('morning', nextVal);
+      if (id === 'adhkar_massa') setDailyAdhkarStatus('evening', nextVal);
+      if (id === 'prayers_on_time') setAllPrayersStatus(nextVal);
+
+      const next = prev.map((t) => (t.id === id ? { ...t, completed: nextVal } : t));
       const allCompleted = next.every((t) => t.completed);
       if (allCompleted) {
         confetti({
@@ -127,6 +180,10 @@ export const SpiritualHabitsWidget: React.FC = () => {
       }
       return next;
     });
+  };
+
+  const togglePrayer = (prayerKey: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha') => {
+    setPrayerStatus(prayerKey, !prayers[prayerKey]);
   };
 
   const currentTimes = EGYPT_PRAYER_TIMES[cityKey];
@@ -221,26 +278,38 @@ export const SpiritualHabitsWidget: React.FC = () => {
 
             {/* Grid of Prayer Times */}
             <div className="grid grid-cols-5 gap-2 text-center text-xs">
-              <div className="bg-emerald-50/60 bg-[#F5F5F5]/60 p-2 rounded-xl border border-emerald-100 dark:border-[#E5E5E5]/60 space-y-1">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-[#6B6B6B] block">الفجر</span>
-                <span className="font-black text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm">{currentTimes.fajr}</span>
-              </div>
-              <div className="bg-emerald-50/60 bg-[#F5F5F5]/60 p-2 rounded-xl border border-emerald-100 dark:border-[#E5E5E5]/60 space-y-1">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-[#6B6B6B] block">الظهر</span>
-                <span className="font-black text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm">{currentTimes.dhuhr}</span>
-              </div>
-              <div className="bg-emerald-50/60 bg-[#F5F5F5]/60 p-2 rounded-xl border border-emerald-100 dark:border-[#E5E5E5]/60 space-y-1">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-[#6B6B6B] block">العصر</span>
-                <span className="font-black text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm">{currentTimes.asr}</span>
-              </div>
-              <div className="bg-emerald-50/60 bg-[#F5F5F5]/60 p-2 rounded-xl border border-emerald-100 dark:border-[#E5E5E5]/60 space-y-1">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-[#6B6B6B] block">المغرب</span>
-                <span className="font-black text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm">{currentTimes.maghrib}</span>
-              </div>
-              <div className="bg-emerald-50/60 bg-[#F5F5F5]/60 p-2 rounded-xl border border-emerald-100 dark:border-[#E5E5E5]/60 space-y-1">
-                <span className="text-[10px] font-bold text-slate-600 dark:text-[#6B6B6B] block">العشاء</span>
-                <span className="font-black text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm">{currentTimes.isha}</span>
-              </div>
+              {[
+                { key: 'fajr', label: 'الفجر', time: currentTimes.fajr },
+                { key: 'dhuhr', label: 'الظهر', time: currentTimes.dhuhr },
+                { key: 'asr', label: 'العصر', time: currentTimes.asr },
+                { key: 'maghrib', label: 'المغرب', time: currentTimes.maghrib },
+                { key: 'isha', label: 'العشاء', time: currentTimes.isha },
+              ].map((p) => {
+                const isChecked = prayers[p.key as keyof typeof prayers];
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => togglePrayer(p.key as any)}
+                    className={`p-2 rounded-xl border transition-all cursor-pointer space-y-1 ${
+                      isChecked
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-emerald-50/60 bg-[#F5F5F5]/60 hover:bg-emerald-100/70 border-emerald-100 dark:border-[#E5E5E5]/60 text-slate-900 dark:text-[#2A2A2A]'
+                    }`}
+                    title={`انقر لتسجيل صلاة ${p.label} كمنجزة`}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className={`text-[10px] font-bold ${isChecked ? 'text-emerald-100' : 'text-slate-600 dark:text-[#6B6B6B]'}`}>
+                        {p.label}
+                      </span>
+                      {isChecked && <Check className="w-3 h-3 text-white shrink-0" />}
+                    </div>
+                    <span className={`font-black text-xs sm:text-sm block ${isChecked ? 'text-white' : 'text-emerald-900 dark:text-emerald-200'}`}>
+                      {p.time}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

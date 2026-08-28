@@ -3,8 +3,10 @@ import { PageContainer } from '../components/PageContainer';
 import { useStudyPlan } from '../context/StudyPlanContext';
 import { ResultsView } from '../components/ResultsView';
 import { AnalyzeMeWidget } from '../components/AnalyzeMeWidget';
+import { DailyAchievementTrackerWidget } from '../components/DailyAchievementTrackerWidget';
+import { DailyCertificateModal } from '../components/DailyCertificateModal';
 import { Compass, Sparkles } from 'lucide-react';
-import { PeakTime, PlanPreference, DiagnosisResult, StudentGoal, StudySession, UserIdentity } from '../types';
+import { PeakTime, PlanPreference, DiagnosisResult, StudentGoal, StudySession, UserIdentity, DailyCertificateData } from '../types';
 import { generateLocalDiagnosis } from '../utils/localEngine';
 
 interface StudySchedulePageProps {
@@ -18,6 +20,13 @@ interface StudySchedulePageProps {
 export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentResult, setCurrentResult, goal, userIdentity, onSessionCompleted }) => {
   const { peakTime, setPeakTime, planPreference, setPlanPreference, additionalNotes, setAdditionalNotes, generateInputPayload } = useStudyPlan();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCert, setSelectedCert] = useState<DailyCertificateData | null>(null);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+
+  const handleOpenCertificate = (cert: DailyCertificateData) => {
+    setSelectedCert(cert);
+    setIsCertModalOpen(true);
+  };
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -43,14 +52,29 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
     return (
       <PageContainer title="جدول الجلسات">
         <div className="space-y-6">
+          {/* Daily 4-condition certificate tracker */}
+          <DailyAchievementTrackerWidget
+            currentResult={currentResult}
+            userIdentity={userIdentity}
+            onOpenCertificate={handleOpenCertificate}
+            compact={true}
+          />
+
           <AnalyzeMeWidget sessions={currentResult.studyPlan} goal={goal} />
+          
           <ResultsView
             result={currentResult}
             goal={goal}
             userIdentity={userIdentity}
             onReevaluate={() => setCurrentResult(null)}
-            onSavePlan={() => {}}
+            onSavePlan={(updated) => setCurrentResult(updated)}
             onSessionCompleted={onSessionCompleted}
+          />
+
+          <DailyCertificateModal
+            isOpen={isCertModalOpen}
+            onClose={() => setIsCertModalOpen(false)}
+            certificateData={selectedCert}
           />
         </div>
       </PageContainer>

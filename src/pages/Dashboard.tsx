@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap, Sparkles, UserCircle } from 'lucide-react';
-import { GamificationState, StudentGoal, DiagnosisResult, UserIdentity } from '../types';
+import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap, Sparkles, UserCircle, Award } from 'lucide-react';
+import { GamificationState, StudentGoal, DiagnosisResult, UserIdentity, DailyCertificateData } from '../types';
 import { GoalWidget } from '../components/GoalWidget';
 import { RescueModeModal } from '../components/RescueModeModal';
 import { WeeklyCertificateModal } from '../components/WeeklyCertificateModal';
+import { DailyAchievementTrackerWidget } from '../components/DailyAchievementTrackerWidget';
+import { DailyCertificateModal } from '../components/DailyCertificateModal';
+import {
+  evaluateDailyConditions,
+  createCertificateData,
+  saveEarnedCertificate,
+  isCertificateAwardedToday,
+  DAILY_ACHIEVEMENT_EVENT,
+} from '../utils/dailyAchievementTracker';
 
 interface DashboardProps {
   gamification: GamificationState;
@@ -21,6 +30,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [isRescueModeOpen, setIsRescueModeOpen] = useState(false);
   const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+  const [dailyCertModalOpen, setDailyCertModalOpen] = useState(false);
+  const [dailyCertData, setDailyCertData] = useState<DailyCertificateData | null>(null);
+
+  // Automatic Trigger Check: ONLY triggers when ALL 4 conditions are met, and only once per day
+  useEffect(() => {
+    const checkDailyCertificateTrigger = () => {
+      const status = evaluateDailyConditions(currentResult);
+      if (status.allCompleted && !isCertificateAwardedToday()) {
+        const cert = createCertificateData(userIdentity || null, status);
+        saveEarnedCertificate(cert);
+        setDailyCertData(cert);
+        setDailyCertModalOpen(true);
+      }
+    };
+
+    // Check immediately on load/change
+    checkDailyCertificateTrigger();
+
+    // Listen for habit/prayer/adhkar/session completions
+    window.addEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyCertificateTrigger);
+    return () => window.removeEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyCertificateTrigger);
+  }, [currentResult, userIdentity]);
+
+  const handleOpenDailyCert = (cert: DailyCertificateData) => {
+    setDailyCertData(cert);
+    setDailyCertModalOpen(true);
+  };
+
+  const handleManualOpenDailyCert = () => {
+    const status = evaluateDailyConditions(currentResult);
+    const cert = createCertificateData(userIdentity || null, status);
+    if (status.allCompleted) {
+      saveEarnedCertificate(cert);
+    }
+    setDailyCertData(cert);
+    setDailyCertModalOpen(true);
+  };
 
   useEffect(() => {
     const DEFAULT_EXAM_DATE = '2027-06-26';
@@ -93,6 +139,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
           <span className="text-sm font-bold">النقاط والمكافآت</span>
         </button>
         <button 
+          onClick={handleManualOpenDailyCert}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-50 to-amber-100/80 text-amber-900 rounded-xl border border-amber-300 hover:from-amber-100 hover:to-amber-200 transition-all shrink-0 snap-start cursor-pointer shadow-xs font-bold"
+        >
+          <Award className="w-4 h-4 text-amber-600" />
+          <span className="text-sm">شهادة اليوم 🏆</span>
+        </button>
+        <button 
           onClick={() => setIsCertificateOpen(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#D15F70]/10 text-[#D15F70] rounded-xl border border-[#D15F70]/20 hover:bg-[#D15F70]/20 transition-colors shrink-0 snap-start cursor-pointer"
         >
@@ -148,6 +201,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
         </div>
       </div>
 
+      {/* Daily 4-Condition Achievement Tracker */}
+      <div>
+        <DailyAchievementTrackerWidget
+          currentResult={currentResult}
+          userIdentity={userIdentity}
+          onOpenCertificate={handleOpenDailyCert}
+        />
+      </div>
+
       {/* Goal & Countdown directly on Home Screen */}
       <div>
         <GoalWidget goal={goal} onSaveGoal={onSaveGoal} userIdentity={userIdentity} />
@@ -193,6 +255,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
           inspirationalVerse: "وَأَن لَّيْسَ لِلْإِنسَانِ إِلَّا مَا سَعَىٰ",
           encouragementMsg: "أنت أقرب لحلمك خطوة إضافية!"
         }}
+      />
+
+      {/* Daily Achievement Certificate Modal */}
+      <DailyCertificateModal
+        isOpen={dailyCertModalOpen}
+        onClose={() => setDailyCertModalOpen(false)}
+        certificateData={dailyCertData}
       />
     </div>
   );

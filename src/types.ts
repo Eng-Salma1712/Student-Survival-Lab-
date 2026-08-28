@@ -190,4 +190,42 @@ export interface WeeklyCertificateData {
   issueDate: string;
 }
 
+export interface DailyConditionsStatus {
+  date: string;
+  sessionsCompleted: boolean;
+  sessionsCount: number;
+  totalSessionsCount: number;
+  prayersCompleted: boolean;
+  prayersDetails: {
+    fajr: boolean;
+    dhuhr: boolean;
+    asr: boolean;
+    maghrib: boolean;
+    isha: boolean;
+  };
+  quranCompleted: boolean;
+  adhkarCompleted: boolean;
+  adhkarDetails: {
+    morning: boolean;
+    evening: boolean;
+  };
+  allCompleted: boolean;
+}
+
+export interface DailyCertificateData {
+  id: string;
+  dateKey: string; // YYYY-MM-DD
+  formattedDate: string; // e.g. "الجمعة، ٢٨ أغسطس ٢٠٢٦"
+  studentName: string;
+  templateIndex: number;
+  title: string;
+  subtitle: string;
+  paragraphs: string[];
+  praiseCallout: string;
+  duaText: string;
+  completedTasksCount: number;
+  completedSessionsCount: number;
+  earnedAt: string; // ISO string
+}
+
 

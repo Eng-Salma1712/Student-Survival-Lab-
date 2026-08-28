@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sun, Moon, Check, RotateCcw, Copy, Sparkles, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
 import { SABAH_ADHKAR, MASSA_ADHKAR, DhikrItem } from '../data/adhkarData';
 import { useToast } from '../context/ToastContext';
+import { setDailyAdhkarStatus } from '../utils/dailyAchievementTracker';
 import confetti from 'canvas-confetti';
 
 interface AdhkarProgress {
@@ -63,6 +64,7 @@ export const DailyAdhkarWidget: React.FC = () => {
       if (isNowDone) {
         const allCompleted = currentList.every((d) => (updated[d.id] || 0) >= d.repeat);
         if (allCompleted) {
+          setDailyAdhkarStatus(activeTab === 'sabah' ? 'morning' : 'evening', true);
           confetti({
             particleCount: 60,
             spread: 70,
@@ -85,7 +87,26 @@ export const DailyAdhkarWidget: React.FC = () => {
       });
       return next;
     });
+    setDailyAdhkarStatus(activeTab === 'sabah' ? 'morning' : 'evening', false);
     toast(`تمت إعادة تعيين ${activeTab === 'sabah' ? 'أذكار الصباح' : 'أذكار المساء'} ليوم جديد`, 'info');
+  };
+
+  const handleCompleteAll = () => {
+    setProgress((prev) => {
+      const updated = { ...prev };
+      currentList.forEach((item) => {
+        updated[item.id] = item.repeat;
+      });
+      return updated;
+    });
+    setDailyAdhkarStatus(activeTab === 'sabah' ? 'morning' : 'evening', true);
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ['#426B4B', '#10B981', '#FBBF24'],
+    });
+    toast(`تم إتمام ${activeTab === 'sabah' ? 'أذكار الصباح' : 'أذكار المساء'} بالكامل بنجاح 🤍`, 'success');
   };
 
   const handleCopy = (item: DhikrItem, e: React.MouseEvent) => {
@@ -129,6 +150,16 @@ export const DailyAdhkarWidget: React.FC = () => {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 self-end sm:self-center">
+          <button
+            type="button"
+            onClick={handleCompleteAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-all border border-emerald-300 cursor-pointer"
+            title="تحديد كافة أذكار هذا القسم كمنجزة"
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>إتمام الكل</span>
+          </button>
+
           <button
             type="button"
             onClick={handleReset}

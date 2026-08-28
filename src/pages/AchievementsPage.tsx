@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { PageContainer } from '../components/PageContainer';
 import { GamificationWidget } from '../components/GamificationWidget';
 import { AchievementsModal } from '../components/AchievementsModal';
-import { GamificationState } from '../types';
+import { DailyCertificateModal } from '../components/DailyCertificateModal';
+import { GamificationState, DailyCertificateData } from '../types';
 import { ALL_BADGES } from '../utils/gamification';
+import { getEarnedCertificates } from '../utils/dailyAchievementTracker';
 import {
   Trophy,
   Flame,
@@ -16,6 +18,10 @@ import {
   Target,
   Gift,
   HelpCircle,
+  Calendar,
+  Eye,
+  Clock,
+  BookOpen,
 } from 'lucide-react';
 
 interface AchievementsPageProps {
@@ -39,8 +45,17 @@ const getRankInfo = (points: number) => {
 
 export const AchievementsPage: React.FC<AchievementsPageProps> = ({ gamification }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState<DailyCertificateData | null>(null);
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [earnedCertificates] = useState<DailyCertificateData[]>(() => getEarnedCertificates());
+
   const unlockedSet = new Set(gamification.unlockedBadgeIds || []);
   const rankInfo = getRankInfo(gamification.points || 0);
+
+  const handleOpenCert = (cert: DailyCertificateData) => {
+    setSelectedCertificate(cert);
+    setIsCertModalOpen(true);
+  };
 
   // Week days for streak visualization
   const weekDays = ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'];
@@ -254,6 +269,87 @@ export const AchievementsPage: React.FC<AchievementsPageProps> = ({ gamification
           </div>
         </div>
 
+        {/* Daily Achievement Certificates History Section */}
+        <div className="card-surface p-6 border-2 border-amber-300/70 bg-gradient-to-br from-amber-50/40 via-white to-amber-50/20 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/60 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center text-xl shrink-0 border border-amber-300">
+                📜
+              </div>
+              <div>
+                <h3 className="text-base font-black text-amber-950 font-heading">
+                  سجل شهادات الإنجاز اليومي 🏆
+                </h3>
+                <p className="text-xs text-slate-600 font-medium">
+                  الشهادات التي استحققتها عند إتمام كافة الشروط الأربعة اليومية بنجاح
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-black px-3 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 self-start sm:self-auto">
+              {earnedCertificates.length} شهادات مكتسبة
+            </span>
+          </div>
+
+          {earnedCertificates.length === 0 ? (
+            <div className="text-center py-8 px-4 bg-white/70 rounded-2xl border border-dashed border-amber-300 space-y-2">
+              <div className="text-3xl">🏅</div>
+              <h4 className="text-sm font-bold text-amber-950">
+                لم تكسب شهادة إنجاز يومي بعد
+              </h4>
+              <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
+                أكمل شروط اليوم الأربعة (جميع جلسات جدول المذاكرة، الصلوات الخمس في أوقاتها، الورد القرآني، وأذكار الصباح والمساء) وستُمنح شهادتك التقديرية فوراً هنا وتُحفظ في سجلك!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+              {earnedCertificates.map((cert) => (
+                <div
+                  key={cert.id}
+                  className="bg-white p-4 rounded-2xl border border-amber-200/90 shadow-2xs hover:border-amber-400 hover:shadow-xs transition-all space-y-3 relative overflow-hidden group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                        <Trophy className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-amber-950 font-heading">
+                          {cert.title}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold mt-0.5">
+                          <Calendar className="w-3 h-3 text-amber-600" />
+                          <span>{cert.formattedDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-700 font-medium line-clamp-2 leading-relaxed bg-amber-50/50 p-2 rounded-xl border border-amber-100">
+                    {cert.paragraphs[0]}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                      <span>🎯 {cert.completedTasksCount} مهام</span>
+                      <span>•</span>
+                      <span>⏱️ {cert.completedSessionsCount} جلسات</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCert(cert)}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black flex items-center gap-1 shadow-2xs cursor-pointer transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>عرض وحفظ</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* How to Earn Points Guide */}
         <div className="card-surface p-5 border border-sky-200 bg-sky-50/50 space-y-3">
           <div className="flex items-center gap-2 text-sky-800">
@@ -289,6 +385,13 @@ export const AchievementsPage: React.FC<AchievementsPageProps> = ({ gamification
             onClose={() => setIsModalOpen(false)}
           />
         )}
+
+        {/* Daily Certificate Modal */}
+        <DailyCertificateModal
+          isOpen={isCertModalOpen}
+          onClose={() => setIsCertModalOpen(false)}
+          certificateData={selectedCertificate}
+        />
 
       </div>
     </PageContainer>
