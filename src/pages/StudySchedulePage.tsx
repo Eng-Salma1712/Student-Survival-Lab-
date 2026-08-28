@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageContainer } from '../components/PageContainer';
 import { useStudyPlan } from '../context/StudyPlanContext';
 import { ResultsView } from '../components/ResultsView';
@@ -8,6 +8,13 @@ import { DailyCertificateModal } from '../components/DailyCertificateModal';
 import { Compass, Sparkles } from 'lucide-react';
 import { PeakTime, PlanPreference, DiagnosisResult, StudentGoal, StudySession, UserIdentity, DailyCertificateData } from '../types';
 import { generateLocalDiagnosis } from '../utils/localEngine';
+import {
+  evaluateDailyConditions,
+  createCertificateData,
+  saveEarnedCertificate,
+  isCertificateAwardedToday,
+  DAILY_ACHIEVEMENT_EVENT,
+} from '../utils/dailyAchievementTracker';
 
 interface StudySchedulePageProps {
   currentResult: DiagnosisResult | null;
@@ -22,6 +29,23 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCert, setSelectedCert] = useState<DailyCertificateData | null>(null);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+
+  // Automatic Trigger Check: pop up certificate automatically when all 4 conditions are met
+  useEffect(() => {
+    const checkDailyTrigger = () => {
+      const status = evaluateDailyConditions(currentResult);
+      if (status.allCompleted && !isCertificateAwardedToday()) {
+        const cert = createCertificateData(userIdentity || null, status);
+        saveEarnedCertificate(cert);
+        setSelectedCert(cert);
+        setIsCertModalOpen(true);
+      }
+    };
+
+    checkDailyTrigger();
+    window.addEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyTrigger);
+    return () => window.removeEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyTrigger);
+  }, [currentResult, userIdentity]);
 
   const handleOpenCertificate = (cert: DailyCertificateData) => {
     setSelectedCert(cert);

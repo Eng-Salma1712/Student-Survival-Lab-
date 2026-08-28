@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap, Sparkles, UserCircle, Award } from 'lucide-react';
+import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap, Sparkles, UserCircle } from 'lucide-react';
 import { GamificationState, StudentGoal, DiagnosisResult, UserIdentity, DailyCertificateData } from '../types';
 import { GoalWidget } from '../components/GoalWidget';
 import { RescueModeModal } from '../components/RescueModeModal';
-import { WeeklyCertificateModal } from '../components/WeeklyCertificateModal';
 import { DailyAchievementTrackerWidget } from '../components/DailyAchievementTrackerWidget';
 import { DailyCertificateModal } from '../components/DailyCertificateModal';
 import {
@@ -29,11 +28,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
 
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [isRescueModeOpen, setIsRescueModeOpen] = useState(false);
-  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
   const [dailyCertModalOpen, setDailyCertModalOpen] = useState(false);
   const [dailyCertData, setDailyCertData] = useState<DailyCertificateData | null>(null);
 
-  // Automatic Trigger Check: ONLY triggers when ALL 4 conditions are met, and only once per day
+  // Automatic Trigger Check: ONLY triggers automatically when ALL 4 conditions are met, and only once per day
   useEffect(() => {
     const checkDailyCertificateTrigger = () => {
       const status = evaluateDailyConditions(currentResult);
@@ -54,16 +52,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
   }, [currentResult, userIdentity]);
 
   const handleOpenDailyCert = (cert: DailyCertificateData) => {
-    setDailyCertData(cert);
-    setDailyCertModalOpen(true);
-  };
-
-  const handleManualOpenDailyCert = () => {
-    const status = evaluateDailyConditions(currentResult);
-    const cert = createCertificateData(userIdentity || null, status);
-    if (status.allCompleted) {
-      saveEarnedCertificate(cert);
-    }
     setDailyCertData(cert);
     setDailyCertModalOpen(true);
   };
@@ -137,20 +125,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
         >
           <Trophy className="w-4 h-4" />
           <span className="text-sm font-bold">النقاط والمكافآت</span>
-        </button>
-        <button 
-          onClick={handleManualOpenDailyCert}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-50 to-amber-100/80 text-amber-900 rounded-xl border border-amber-300 hover:from-amber-100 hover:to-amber-200 transition-all shrink-0 snap-start cursor-pointer shadow-xs font-bold"
-        >
-          <Award className="w-4 h-4 text-amber-600" />
-          <span className="text-sm">شهادة اليوم 🏆</span>
-        </button>
-        <button 
-          onClick={() => setIsCertificateOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#D15F70]/10 text-[#D15F70] rounded-xl border border-[#D15F70]/20 hover:bg-[#D15F70]/20 transition-colors shrink-0 snap-start cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span className="text-sm font-bold">شهادة الأسبوع</span>
         </button>
       </div>
 
@@ -239,25 +213,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
 
       <RescueModeModal isOpen={isRescueModeOpen} onClose={() => setIsRescueModeOpen(false)} />
       
-      <WeeklyCertificateModal
-        isOpen={isCertificateOpen}
-        onClose={() => setIsCertificateOpen(false)}
-        userIdentity={userIdentity || null}
-        goal={goal}
-        certificateData={{
-          studentName: userIdentity?.name || 'طالب متميز',
-          weekStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          weekEndDate: new Date().toISOString(),
-          totalFocusedHours: Math.floor((gamification.points || 0) / 10),
-          completedLessonsCount: Math.floor((gamification.points || 0) / 5),
-          streakDays: gamification.currentStreak || 0,
-          keyAchievements: ['إنجاز مهام الأسبوع بنجاح', 'الالتزام بجدول المذاكرة'],
-          inspirationalVerse: "وَأَن لَّيْسَ لِلْإِنسَانِ إِلَّا مَا سَعَىٰ",
-          encouragementMsg: "أنت أقرب لحلمك خطوة إضافية!"
-        }}
-      />
-
-      {/* Daily Achievement Certificate Modal */}
+      {/* Daily Achievement Certificate Modal (Triggers automatically upon completing all 4 conditions) */}
       <DailyCertificateModal
         isOpen={dailyCertModalOpen}
         onClose={() => setDailyCertModalOpen(false)}

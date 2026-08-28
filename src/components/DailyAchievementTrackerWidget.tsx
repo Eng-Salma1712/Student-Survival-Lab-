@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trophy, CheckCircle2, Circle, Sparkles, BookOpen, Sun, Moon, Clock, ArrowRight, Award } from 'lucide-react';
 import {
   evaluateDailyConditions,
@@ -16,7 +17,7 @@ import confetti from 'canvas-confetti';
 interface DailyAchievementTrackerWidgetProps {
   currentResult?: DiagnosisResult | null;
   userIdentity?: UserIdentity | null;
-  onOpenCertificate: (cert: DailyCertificateData) => void;
+  onOpenCertificate?: (cert: DailyCertificateData) => void;
   compact?: boolean;
 }
 
@@ -26,6 +27,7 @@ export const DailyAchievementTrackerWidget: React.FC<DailyAchievementTrackerWidg
   onOpenCertificate,
   compact = false,
 }) => {
+  const navigate = useNavigate();
   const [conditions, setConditions] = useState<DailyConditionsStatus>(() =>
     evaluateDailyConditions(currentResult)
   );
@@ -65,18 +67,6 @@ export const DailyAchievementTrackerWidget: React.FC<DailyAchievementTrackerWidg
     conditions.adhkarCompleted,
   ].filter(Boolean).length;
 
-  const handleTriggerCertificate = () => {
-    const cert = createCertificateData(userIdentity || null, conditions);
-    saveEarnedCertificate(cert);
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#F59E0B', '#10B981', '#E11D48'],
-    });
-    onOpenCertificate(cert);
-  };
-
   if (compact) {
     return (
       <div className="card-surface p-4 border border-amber-200/80 bg-gradient-to-r from-amber-50/70 via-white to-emerald-50/50 rounded-2xl shadow-xs dir-rtl space-y-2">
@@ -96,14 +86,9 @@ export const DailyAchievementTrackerWidget: React.FC<DailyAchievementTrackerWidg
           </div>
 
           {conditions.allCompleted ? (
-            <button
-              type="button"
-              onClick={handleTriggerCertificate}
-              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm shadow-amber-500/20 animate-pulse cursor-pointer transition-all"
-            >
-              <Award className="w-3.5 h-3.5" />
-              <span>عرض الشهادة اليومية</span>
-            </button>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300">
+              مكتملة بالكامل (٤/٤) ✓
+            </span>
           ) : (
             <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-100/70 text-amber-900 border border-amber-200">
               المتبقي: {4 - completedConditionsCount}
@@ -132,20 +117,16 @@ export const DailyAchievementTrackerWidget: React.FC<DailyAchievementTrackerWidg
               </span>
             </div>
             <p className="text-xs text-slate-600 font-medium pt-0.5">
-              تُمنح الشهادة حصريًا عند إكمال الفروض الأربعة بالكامل دون استثناء:
+              تُمنح الشهادة تلقائيًا كرسالة احتفال عند إكمال الفروض الأربعة بالكامل دون استثناء:
             </p>
           </div>
         </div>
 
         {conditions.allCompleted && (
-          <button
-            type="button"
-            onClick={handleTriggerCertificate}
-            className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/30 cursor-pointer transition-all hover:scale-102"
-          >
-            <Sparkles className="w-4 h-4 text-amber-200" />
-            <span>استلام شهادة اليوم الذهبية 🎉</span>
-          </button>
+          <div className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-2xl text-xs font-bold shadow-2xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>مكتملة ٤/٤ - محفوظة في سجل النقاط</span>
+          </div>
         )}
       </div>
 
@@ -344,30 +325,22 @@ export const DailyAchievementTrackerWidget: React.FC<DailyAchievementTrackerWidg
             <span className="font-black text-amber-700">تذكير:</span>
             <span>أكمل كافة الشروط الأربعة لتفعيل ظهور شهادة تقديرك اليومية تلقائياً</span>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              // Quick preview demo of template
-              const cert = createCertificateData(userIdentity || null, conditions);
-              onOpenCertificate(cert);
-            }}
-            className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
-          >
-            معاينة نموذج الشهادة 👁️
-          </button>
+          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-amber-200/70 text-amber-950">
+            المتبقي: {4 - completedConditionsCount} من ٤
+          </span>
         </div>
       ) : (
         <div className="bg-emerald-100/80 border border-emerald-300 rounded-2xl p-3.5 text-xs text-emerald-950 flex items-center justify-between flex-wrap gap-2 animate-in fade-in">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎉</span>
-            <span className="font-extrabold">ما شاء الله! حققت كافة الشروط المطلوبة لليوم بالكامل، شهادتك جاهزة!</span>
+            <span className="font-extrabold">ما شاء الله! حققت كافة الشروط المطلوبة لليوم بالكامل، وتم منح شهادتك وحفظها في سجلك.</span>
           </div>
           <button
             type="button"
-            onClick={handleTriggerCertificate}
-            className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-black text-xs cursor-pointer shadow-xs"
+            onClick={() => navigate('/achievements')}
+            className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors"
           >
-            عرض شهادة اليوم 🏆
+            سجل الإنجازات في النقاط 📜
           </button>
         </div>
       )}
