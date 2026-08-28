@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { StudySession } from '../types';
-import { Play, Pause, RotateCcw, X, CheckCircle, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw, X, CheckCircle, Clock, BookOpen, ChevronDown, ChevronUp, Sparkles, ExternalLink } from 'lucide-react';
 
 interface SessionTimerModalProps {
   session: StudySession;
@@ -13,9 +14,11 @@ export const SessionTimerModal: React.FC<SessionTimerModalProps> = ({
   onClose,
   onToggleComplete,
 }) => {
+  const navigate = useNavigate();
   const [secondsLeft, setSecondsLeft] = useState<number>(session.durationMinutes * 60);
   const [isActive, setIsActive] = useState<boolean>(false);
   const [isBreakMode, setIsBreakMode] = useState<boolean>(false);
+  const [showDua, setShowDua] = useState<boolean>(true);
 
   const totalSeconds = (isBreakMode ? session.breakMinutes : session.durationMinutes) * 60;
 
@@ -119,6 +122,41 @@ export const SessionTimerModal: React.FC<SessionTimerModalProps> = ({
             <span className="text-[#D15F70] font-bold">ملاحظة: </span> {session.notes}
           </div>
         )}
+
+        {/* Study Dua Prompt / Reminder */}
+        <div className="rounded-2xl border border-[#C9DEC9] bg-[#FAFDFB] p-3 text-xs space-y-1.5">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowDua(!showDua)}
+              className="flex items-center gap-1.5 font-bold text-[#426B4B] hover:text-[#34553B] cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isBreakMode ? '🌿 دعاء ختام المذاكرة والاستيداع' : '📖 دعاء بداية المذاكرة وطلب الفهم'}</span>
+              {showDua ? <ChevronUp className="w-3 h-3 text-[#7A5B64]" /> : <ChevronDown className="w-3 h-3 text-[#7A5B64]" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/spiritual?tab=study');
+              }}
+              className="flex items-center gap-1 text-[11px] font-bold text-[#7A5B64] hover:text-[#426B4B] cursor-pointer transition-colors"
+              title="الانتقال إلى قسم الأدعية في الركن الروحي"
+            >
+              <span>جميع الأدعية</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          </div>
+
+          {showDua && (
+            <p className="text-[11px] font-arabic leading-relaxed text-[#5B3C43] bg-white p-2.5 rounded-xl border border-[#E8F2E9]">
+              {isBreakMode
+                ? '«اللَّهُمَّ إِنِّي أَسْتَوْدِعُكَ مَا قَرَأْتُ وَمَا حَفِظْتُ وَمَا تَعَلَّمْتُ، فَرُدَّهُ عَلَيَّ عِنْدَ حَاجَتِي إِلَيْهِ، إِنَّكَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ»'
+                : '«اللَّهُمَّ إِنِّي أَسْأَلُكَ فَهْمَ النَّبِيِّينَ، وَحِفْظَ الْمُرْسَلِينَ، وَالْمَلَائِكَةِ الْمُقَرَّبِينَ... رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي»'}
+            </p>
+          )}
+        </div>
 
         <div className="flex items-center justify-center gap-3 font-bold text-xs">
           <button

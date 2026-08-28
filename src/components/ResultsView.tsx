@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { DiagnosisResult, StudySession, StudentGoal, UserIdentity } from '../types';
 import { getTitleInfo } from './UserPersonalizationWidget';
 import { SessionTimerModal } from './SessionTimerModal';
@@ -344,6 +345,22 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                   {completedCount}/{sessions.length} مكتمل
                 </span>
               </div>
+            </div>
+
+            {/* Spiritual Study Dua Prompt */}
+            <div className="mb-4 p-3.5 rounded-2xl bg-[#E8F2E9]/70 border border-[#C9DEC9] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-[#426B4B]">
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="font-bold">
+                  بركة المذاكرة: استفتح جلساتك بدعاء الفهم واختمها بالاستيداع لنيل التوفيق
+                </span>
+              </div>
+              <Link
+                to="/spiritual?tab=study"
+                className="font-bold text-[#426B4B] hover:text-[#34553B] bg-white px-3 py-1.5 rounded-xl border border-[#C9DEC9] shrink-0 transition-colors shadow-2xs"
+              >
+                أدعية المذاكرة ↗
+              </Link>
             </div>
 
             <SkippedWarningBanner
