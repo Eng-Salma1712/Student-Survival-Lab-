@@ -86,6 +86,50 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', model: 'gemini-3.6-flash' });
 });
 
+// Cache for prayer times: key: `${city}_${dateStr}`
+const prayerTimesCache = new Map<string, { timestamp: number; data: any }>();
+
+// Prayer Times Endpoint using Aladhan API for Egypt (Africa/Cairo timezone & Egyptian Survey Authority method 5)
+app.get('/api/prayer-times', async (req, res) => {
+  try {
+    const city = (req.query.city as string) || 'Cairo';
+    const country = (req.query.country as string) || 'Egypt';
+
+    // Get current date string in Africa/Cairo
+    const now = new Date();
+    const cairoDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Africa/Cairo' });
+    const cacheKey = `${city.toLowerCase()}_${cairoDateStr}`;
+
+    const cached = prayerTimesCache.get(cacheKey);
+    // Cache valid for 6 hours
+    if (cached && Date.now() - cached.timestamp < 6 * 60 * 60 * 1000) {
+      res.json(cached.data);
+      return;
+    }
+
+    const apiUrl = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=5`;
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Aladhan API responded with status ${response.status}`);
+    }
+
+    const payload: any = await response.json();
+    if (payload.code === 200 && payload.data) {
+      prayerTimesCache.set(cacheKey, { timestamp: Date.now(), data: payload.data });
+      res.json(payload.data);
+      return;
+    }
+
+    throw new Error('Invalid response structure from Aladhan API');
+  } catch (err: any) {
+    console.error('Error fetching prayer times from Aladhan:', err.message);
+    res.status(502).json({
+      error: 'PRAYER_TIMES_FETCH_FAILED',
+      message: err.message,
+    });
+  }
+});
+
 // AI Study Coach Route
 app.post('/api/chat', async (req, res) => {
   try {

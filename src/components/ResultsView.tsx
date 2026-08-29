@@ -7,7 +7,7 @@ import { GoalCompletionModal } from './GoalCompletionModal';
 import { SkippedWarningBanner } from './SkippedWarningBanner';
 import { TimetableScheduleView } from './TimetableScheduleView';
 import { useToast } from '../context/ToastContext';
-import { notifyDailyAchievementChange } from '../utils/dailyAchievementTracker';
+import { notifyDailyAchievementChange, NEW_DAY_RESET_EVENT, recordDailyProgressActivity } from '../utils/dailyAchievementTracker';
 import confetti from 'canvas-confetti';
 import {
   Brain,
@@ -173,7 +173,28 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
 
   const titleInfo = getTitleInfo(userIdentity);
 
+  useEffect(() => {
+    setSessions(result.studyPlan || []);
+  }, [result.studyPlan]);
+
+  useEffect(() => {
+    const handleNewDay = () => {
+      try {
+        const savedPlan = localStorage.getItem('thanaweya_current_plan');
+        if (savedPlan) {
+          const parsed = JSON.parse(savedPlan);
+          if (parsed.studyPlan) {
+            setSessions(parsed.studyPlan);
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener(NEW_DAY_RESET_EVENT, handleNewDay);
+    return () => window.removeEventListener(NEW_DAY_RESET_EVENT, handleNewDay);
+  }, []);
+
   const toggleSessionCompletion = (sessionId: string) => {
+    recordDailyProgressActivity();
     let newlyCompletedSession: StudySession | null = null;
     let updatedSessions: StudySession[] = [];
 

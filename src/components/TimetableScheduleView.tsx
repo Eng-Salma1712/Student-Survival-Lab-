@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StudySession, StudentGoal } from '../types';
 import { useToast } from '../context/ToastContext';
 import { SessionTimerModal } from './SessionTimerModal';
@@ -15,70 +15,61 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Timer,
+  Info
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { formatTimeTo12HourArabic, toArabicDigits } from '../utils/timeFormat';
+import { calculateTimedSessions, TimedSession } from '../utils/scheduleCalculator';
 
 interface TimetableScheduleViewProps {
   sessions: StudySession[];
   onToggleSession: (id: string) => void;
   goal?: StudentGoal | null;
+  defaultStartTime?: string;
 }
 
 export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
   sessions,
   onToggleSession,
-  goal
+  goal,
+  defaultStartTime = '10:00'
 }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'today' | 'tomorrow' | 'week'>('today');
   const [activeTimerSession, setActiveTimerSession] = useState<StudySession | null>(null);
   const [reminderIds, setReminderIds] = useState<Record<string, boolean>>({});
 
-  // Calculate start/end times sequentially starting from 09:00 AM
-  const getTimedSessions = () => {
-    let currentHour = 9;
-    let currentMinute = 0;
+  // Schedule start time (defaults to 10:00 AM as requested)
+  const [scheduleStartTime, setScheduleStartTime] = useState<string>(() => {
+    try {
+      return localStorage.getItem('thanaweya_schedule_start_time') || defaultStartTime;
+    } catch {
+      return defaultStartTime;
+    }
+  });
 
-    return sessions.map((session, idx) => {
-      const duration = session.durationMinutes || 60;
-      const breakDuration = session.breakMinutes || 15;
-
-      const startH = Math.floor(currentHour);
-      const startM = Math.round((currentHour - startH) * 60);
-      const startTimeStr = `${String(startH).padStart(2, '0')}:${String(startM).padStart(2, '0')}`;
-      
-      const endTotalMinutes = startH * 60 + startM + duration;
-      const endH = Math.floor(endTotalMinutes / 60) % 24;
-      const endM = endTotalMinutes % 60;
-      const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-
-      // Advance current time past session + break
-      currentHour = Math.floor((endTotalMinutes + breakDuration) / 60);
-      currentMinute = (endTotalMinutes + breakDuration) % 60;
-
-      // Determine status (e.g. first uncompleted is current, earlier are completed, later are upcoming)
-      let status: 'completed' | 'current' | 'upcoming' | 'missed' = 'upcoming';
-      if (session.completed) {
-        status = 'completed';
-      } else if (idx === sessions.findIndex(s => !s.completed)) {
-        status = 'current';
-      } else if (idx < sessions.findIndex(s => !s.completed)) {
-        status = 'completed';
-      }
-
-      return {
-        ...session,
-        startTime: startTimeStr,
-        endTime: endTimeStr,
-        breakDuration,
-        computedStatus: status,
-      };
-    });
+  const handleStartTimeChange = (newTime: string) => {
+    setScheduleStartTime(newTime);
+    try {
+      localStorage.setItem('thanaweya_schedule_start_time', newTime);
+    } catch {}
+    toast(`تم ضبط موعد بدء الجدول عند ${formatTimeTo12HourArabic(newTime)} ⏰`, 'info');
   };
 
-  const timedSessions = getTimedSessions();
+  // Calculate start/end times sequentially across the entire day:
+  // Each session start time accounts for cumulative duration + ALL previous breaks!
+  const timedSessions: TimedSession[] = useMemo(() => {
+    return calculateTimedSessions(sessions, scheduleStartTime);
+  }, [sessions, scheduleStartTime]);
+
   const completedCount = sessions.filter(s => s.completed).length;
+
+  const totalStudyMinutes = timedSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+  const totalBreakMinutes = timedSessions.slice(0, -1).reduce((sum, s) => sum + s.breakDuration, 0);
+  const scheduleStartTimeFormatted = timedSessions[0]?.startTimeFormatted || formatTimeTo12HourArabic(scheduleStartTime);
+  const scheduleEndTimeFormatted = timedSessions[timedSessions.length - 1]?.endTimeFormatted || '';
 
   const handleReminderToggle = (id: string, title: string) => {
     const isSet = !!reminderIds[id];
@@ -96,41 +87,83 @@ export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
   return (
     <div className="space-y-6 dir-rtl font-sans" dir="rtl">
       
-      {/* Daily / Weekly Navigation Header */}
-      <div className="card-surface p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-[#E8F2E9] via-white to-[#FBE8EE] border border-[#C9DEC9]">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-[#426B4B] text-white flex items-center justify-center shadow-xs">
-            <Calendar className="w-5 h-5" />
+      {/* Daily / Weekly Navigation Header with Start Time Selector */}
+      <div className="card-surface p-4 space-y-3 bg-gradient-to-r from-[#E8F2E9] via-white to-[#FBE8EE] border border-[#C9DEC9]">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-[#426B4B] text-white flex items-center justify-center shadow-xs">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-[#5B3C43] font-heading">
+                جدول الحصص والزمن الدراسي (نظام ١٢ ساعة)
+              </h3>
+              <p className="text-[11px] text-[#7A5B64] font-medium">
+                مخطط زمني دقيق يدمج فترات الاستراحة آلياً في موعد كل جلسة تالية
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-black text-[#5B3C43] font-heading">
-              جدول الحصص والزمن الدراسي
-            </h3>
-            <p className="text-[11px] text-[#7A5B64] font-medium">
-              مخطط زمني منظم بدقة لإنجاز مهامك اليومية
-            </p>
+
+          {/* Tab Switcher: Today, Tomorrow, This Week */}
+          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-[#C9DEC9] shadow-2xs">
+            {[
+              { id: 'today', label: 'اليوم' },
+              { id: 'tomorrow', label: 'غداً' },
+              { id: 'week', label: 'هذا الأسبوع' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'bg-[#426B4B] text-white shadow-xs'
+                    : 'text-[#7A5B64] hover:bg-[#E8F2E9]/60'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Tab Switcher: Today, Tomorrow, This Week */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-[#C9DEC9] shadow-2xs">
-          {[
-            { id: 'today', label: 'اليوم' },
-            { id: 'tomorrow', label: 'غداً' },
-            { id: 'week', label: 'هذا الأسبوع' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-[#426B4B] text-white shadow-xs'
-                  : 'text-[#7A5B64] hover:bg-[#E8F2E9]/60'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Start Time Selector & Cumulative Stats Bar */}
+        <div className="pt-3 border-t border-[#C9DEC9]/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[#5B3C43] font-bold flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-[#426B4B]" />
+              موعد بدء الجدول:
+            </span>
+            <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-[#C9DEC9]">
+              {[
+                { time: '10:00', label: '١٠:٠٠ ص' },
+                { time: '09:00', label: '٠٩:٠٠ ص' },
+                { time: '08:00', label: '٠٨:٠٠ ص' },
+                { time: '13:00', label: '٠١:٠٠ م' },
+                { time: '16:00', label: '٠٤:٠٠ م' },
+              ].map((slot) => (
+                <button
+                  key={slot.time}
+                  onClick={() => handleStartTimeChange(slot.time)}
+                  className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    scheduleStartTime === slot.time
+                      ? 'bg-[#426B4B] text-white'
+                      : 'text-[#7A5B64] hover:bg-[#E8F2E9]'
+                  }`}
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px] font-semibold text-[#5B3C43]">
+            <span className="px-2.5 py-1 rounded-lg bg-white border border-[#C9DEC9] text-[#426B4B]">
+              ⏱️ المدى: {scheduleStartTimeFormatted} ← {scheduleEndTimeFormatted}
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-white border border-[#C9DEC9] text-[#9E4D68]">
+              ☕ الاستراحات: {toArabicDigits(totalBreakMinutes)} دقيقة مضافة
+            </span>
+          </div>
         </div>
       </div>
 
@@ -152,8 +185,8 @@ export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
                     <h4 className="text-lg font-black font-heading">
                       {current.subject} — {current.title}
                     </h4>
-                    <p className="text-xs text-emerald-100">
-                      🕐 {current.startTime} – {current.endTime} ({current.durationMinutes} دقيقة) • {current.focusType}
+                    <p className="text-xs text-emerald-100 font-medium">
+                      🕐 {current.startTimeFormatted} – {current.endTimeFormatted} ({toArabicDigits(current.durationMinutes)} دقيقة) • {current.focusType}
                     </p>
                   </>
                 );
@@ -184,6 +217,7 @@ export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
           const isCurrent = session.computedStatus === 'current';
           const isUpcoming = session.computedStatus === 'upcoming';
           const isReminder = !!reminderIds[session.id];
+          const nextSession = timedSessions[index + 1];
 
           return (
             <React.Fragment key={session.id}>
@@ -239,11 +273,11 @@ export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-xs font-bold text-[#426B4B]">
                         <Clock className="w-3.5 h-3.5" />
-                        <span className="tracking-wide">
-                          {session.startTime} – {session.endTime}
+                        <span className="tracking-wide text-sm font-black">
+                          {session.startTimeFormatted} – {session.endTimeFormatted}
                         </span>
-                        <span className="text-[#7A5B64] font-normal">
-                          ({session.durationMinutes} دقيقة)
+                        <span className="text-[#7A5B64] font-semibold bg-[#E8F2E9] px-2 py-0.5 rounded-md text-[11px]">
+                          {toArabicDigits(session.durationMinutes)} دقيقة تركيز
                         </span>
                       </div>
 
@@ -308,12 +342,19 @@ export const TimetableScheduleView: React.FC<TimetableScheduleViewProps> = ({
               </div>
 
               {/* Break Cell (if not the last session and break duration > 0) */}
-              {index < timedSessions.length - 1 && session.breakDuration > 0 && (
-                <div className="flex items-center justify-center my-2">
-                  <div className="px-4 py-1.5 rounded-full bg-[#FBE8EE]/80 border border-[#F4C7D5] text-[#9E4D68] text-[11px] font-bold flex items-center gap-2 shadow-2xs">
-                    <Coffee className="w-3.5 h-3.5 animate-pulse text-[#DE5D83]" />
-                    <span>استراحة قصيرة • {session.breakDuration} دقيقة استرخاء وتجديد نشاط</span>
+              {index < timedSessions.length - 1 && session.breakDuration > 0 && nextSession && (
+                <div className="flex flex-col items-center justify-center my-3 relative">
+                  <div className="w-0.5 h-3 bg-[#F4C7D5] mb-1" />
+                  <div className="px-4 py-2 rounded-2xl bg-gradient-to-r from-[#FBE8EE] via-white to-[#FBE8EE] border border-[#F4C7D5] text-[#9E4D68] text-xs font-bold flex flex-wrap items-center justify-center gap-2 shadow-2xs">
+                    <Coffee className="w-4 h-4 animate-pulse text-[#DE5D83] shrink-0" />
+                    <span>
+                      استراحة بينية: <strong className="text-[#DE5D83]">{toArabicDigits(session.breakDuration)} دقيقة</strong> ({session.breakStartTimeFormatted} – {session.breakEndTimeFormatted})
+                    </span>
+                    <span className="text-[10px] text-[#7A5B64] font-medium bg-white px-2 py-0.5 rounded-full border border-[#F4C7D5]/70">
+                      ← الجلسة التالية تبدأ عند {nextSession.startTimeFormatted}
+                    </span>
                   </div>
+                  <div className="w-0.5 h-3 bg-[#F4C7D5] mt-1" />
                 </div>
               )}
             </React.Fragment>

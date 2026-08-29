@@ -102,25 +102,51 @@ export const getYesterdayDateString = (): string => {
 };
 
 /**
- * Checks and updates streak based on last active date
+ * Checks and updates streak based on last active date and yesterday's certificate
  */
 export const checkStreakOnLoad = (state: GamificationState): GamificationState => {
   const today = getTodayDateString();
   const yesterday = getYesterdayDateString();
 
   if (!state.lastActiveDate) {
+    return { ...state, lastActiveDate: today };
+  }
+
+  // If last active was today, keep current streak
+  if (state.lastActiveDate === today) {
     return state;
   }
 
-  // If last active was today or yesterday, streak is maintained
-  if (state.lastActiveDate === today || state.lastActiveDate === yesterday) {
-    return state;
+  // If last active was yesterday, check if yesterday earned a certificate
+  if (state.lastActiveDate === yesterday) {
+    let isYesterdayEarned = false;
+    try {
+      const rawAwarded = localStorage.getItem('thanaweya_daily_cert_awarded_dates');
+      const awardedDates: string[] = rawAwarded ? JSON.parse(rawAwarded) : [];
+      const rawCerts = localStorage.getItem('thanaweya_earned_certificates');
+      const certs: any[] = rawCerts ? JSON.parse(rawCerts) : [];
+      isYesterdayEarned = awardedDates.includes(yesterday) || certs.some((c: any) => c.dateKey === yesterday);
+    } catch (e) {}
+
+    if (isYesterdayEarned) {
+      if (state.lastStreakIncrementDate !== yesterday) {
+        const nextStreak = (state.currentStreak || 0) + 1;
+        return {
+          ...state,
+          currentStreak: nextStreak,
+          bestStreak: Math.max(state.bestStreak || 0, nextStreak),
+          lastStreakIncrementDate: yesterday,
+        };
+      }
+      return state;
+    }
   }
 
-  // Otherwise, missed more than a day, reset current streak
+  // Otherwise, missed more than a day or missed completing yesterday: reset streak to 0
   return {
     ...state,
     currentStreak: 0,
+    lastStreakIncrementDate: '',
   };
 };
 
@@ -140,7 +166,6 @@ export const processCompletedSession = (
   isDifficultSubject: boolean = false
 ): ProcessSessionResult => {
   const today = getTodayDateString();
-  const yesterday = getYesterdayDateString();
 
   // Calculate points
   const basePoints = 50;
@@ -148,25 +173,11 @@ export const processCompletedSession = (
   const pointsEarned = basePoints + bonusPoints;
   const newPoints = currentState.points + pointsEarned;
 
-  // Streak logic
-  let newStreak = currentState.currentStreak;
-  if (currentState.lastActiveDate !== today) {
-    if (currentState.lastActiveDate === yesterday || currentState.lastActiveDate === '') {
-      newStreak = currentState.currentStreak + 1;
-    } else {
-      // Streak broken, restart at 1
-      newStreak = 1;
-    }
-  }
-
-  const newBestStreak = Math.max(currentState.bestStreak, newStreak);
   const newCompletedSessions = currentState.totalCompletedSessions + 1;
 
   let newState: GamificationState = {
     ...currentState,
     points: newPoints,
-    currentStreak: newStreak,
-    bestStreak: newBestStreak,
     lastActiveDate: today,
     totalCompletedSessions: newCompletedSessions,
   };
@@ -185,7 +196,7 @@ export const processCompletedSession = (
     if (badge.requiredSessions && newCompletedSessions >= badge.requiredSessions) {
       unlocked = true;
     }
-    if (badge.requiredStreak && newStreak >= badge.requiredStreak) {
+    if (badge.requiredStreak && (newState.currentStreak || 0) >= badge.requiredStreak) {
       unlocked = true;
     }
     if (badge.requiredPoints && newPoints >= badge.requiredPoints) {

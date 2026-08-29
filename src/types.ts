@@ -147,6 +147,7 @@ export interface GamificationState {
   unlockedBadgeIds: string[];
   totalCompletedSessions: number;
   totalSkippedSessions: number;
+  lastStreakIncrementDate?: string; // YYYY-MM-DD when streak was last incremented
 }
 
 export interface ChatAttachment {

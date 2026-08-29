@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Search, Bookmark, ArrowRight, Sparkles, Loader2, BookmarkCheck, Type, RefreshCw, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { QURAN_SURAHS, SurahMeta } from '../data/quranSurahs';
 import { useToast } from '../context/ToastContext';
+import { setDailyQuranStatus, recordDailyProgressActivity } from '../utils/dailyAchievementTracker';
 
 interface AyahData {
   number: number;
@@ -474,7 +475,12 @@ export const QuranReaderWidget: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => saveBookmark(selectedSurah.number, selectedSurah.name, selectedSurah.numberOfAyahs)}
+                  onClick={() => {
+                    saveBookmark(selectedSurah.number, selectedSurah.name, selectedSurah.numberOfAyahs);
+                    setDailyQuranStatus(true);
+                    recordDailyProgressActivity();
+                    toast(`مبارك! تم إتمام قراءة سورة ${selectedSurah.name} واحتساب الورد القرآني لليوم 🤍`, 'success');
+                  }}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#426B4B] text-white hover:bg-[#34553B] cursor-pointer shadow-xs transition-colors"
                 >
                   <BookmarkCheck className="w-4 h-4" />

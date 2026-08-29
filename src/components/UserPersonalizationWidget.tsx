@@ -2,49 +2,15 @@ import React, { useState } from 'react';
 import { User, Check, Settings2, GraduationCap, School, BookOpen, Compass } from 'lucide-react';
 import { UserIdentity, EducationStage, SecondaryTrack } from '../types';
 import { PREP_GRADES, SECONDARY_GRADES } from '../utils/educationConfig';
+import { getTitleInfo, TitleInfo, saveUserIdentity } from '../utils/userProfile';
+
+export { getTitleInfo };
+export type { TitleInfo };
 
 interface UserPersonalizationWidgetProps {
   identity: UserIdentity | null;
   onSaveIdentity: (identity: UserIdentity) => void;
 }
-
-export const getTitleInfo = (identity?: UserIdentity | null) => {
-  if (!identity) return { formalTitle: 'طالب', emoji: '🧑‍🎓', pronoun: 'أنت' };
-  
-  const isFemale = identity.gender === 'female';
-  let title = isFemale ? 'دكتورة' : 'دكتور';
-  let emoji = isFemale ? '👩‍⚕️' : '👨‍⚕️';
-  
-  if (identity.category === 'engineering') {
-    title = isFemale ? 'بشمهندسة' : 'بشمهندس';
-    emoji = isFemale ? '👩‍🔬' : '👨‍🔧';
-  } else if (identity.category === 'computing') {
-    title = isFemale ? 'مبرمجة' : 'مبرمج';
-    emoji = '💻';
-  } else if (identity.category === 'arts') {
-    title = isFemale ? 'فنانة' : 'فنان';
-    emoji = '🎨';
-  } else if (identity.category === 'literature') {
-    title = isFemale ? 'أستاذة' : 'أستاذ';
-    emoji = '📚';
-  } else if (identity.category === 'other') {
-    if (identity.stage === 'prep') {
-      title = isFemale ? 'بطلة الإعدادية' : 'بطل الإعدادية';
-      emoji = '🌟';
-    } else {
-      title = isFemale ? 'المتفوقة' : 'المتفوق';
-      emoji = '🎯';
-    }
-  }
-
-  const name = identity.name.split(' ')[0] || '';
-  
-  return {
-    formalTitle: name ? `${title} ${name}` : title,
-    emoji,
-    pronoun: isFemale ? 'أنتِ' : 'أنت',
-  };
-};
 
 export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps> = ({
   identity,
@@ -77,7 +43,8 @@ export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps>
     e.preventDefault();
     if (!name.trim()) return;
     
-    let defaultCollege = 'كلية الطب البشري';
+    let defaultCollege = 'الكلية الحلم';
+    if (category === 'medicine') defaultCollege = 'كلية الطب';
     if (category === 'engineering') defaultCollege = 'كلية الهندسة';
     if (category === 'computing') defaultCollege = 'كلية الحاسبات والمعلومات';
     if (category === 'arts') defaultCollege = 'كلية الفنون والتصميم';
@@ -90,7 +57,7 @@ export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps>
     const matchedGrade = currentGradeOptions.find(g => g.id === grade);
     const gradeLabel = matchedGrade ? matchedGrade.label : (stage === 'prep' ? 'المرحلة الإعدادية' : 'المرحلة الثانوية');
 
-    onSaveIdentity({
+    const newIdentity: UserIdentity = {
       name: name.trim(),
       gender,
       category,
@@ -99,7 +66,10 @@ export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps>
       track: stage === 'secondary' ? track : undefined,
       grade,
       gradeLabel,
-    });
+    };
+
+    saveUserIdentity(newIdentity);
+    onSaveIdentity(newIdentity);
     setIsEditing(false);
   };
 

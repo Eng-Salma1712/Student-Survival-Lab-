@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sun, Moon, Check, RotateCcw, Copy, Sparkles, ChevronDown, ChevronUp, CheckCircle2, Circle } from 'lucide-react';
 import { SABAH_ADHKAR, MASSA_ADHKAR, DhikrItem } from '../data/adhkarData';
 import { useToast } from '../context/ToastContext';
-import { setDailyAdhkarStatus } from '../utils/dailyAchievementTracker';
+import { setDailyAdhkarStatus, getTodayISO, recordDailyProgressActivity, NEW_DAY_RESET_EVENT } from '../utils/dailyAchievementTracker';
 import confetti from 'canvas-confetti';
 
 interface AdhkarProgress {
@@ -20,7 +20,7 @@ export const DailyAdhkarWidget: React.FC = () => {
     try {
       const saved = localStorage.getItem('thanaweya_adhkar_progress');
       const savedDate = localStorage.getItem('thanaweya_adhkar_date');
-      const today = new Date().toDateString();
+      const today = getTodayISO();
       if (saved && savedDate === today) {
         return JSON.parse(saved);
       }
@@ -33,16 +33,26 @@ export const DailyAdhkarWidget: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem('thanaweya_adhkar_progress', JSON.stringify(progress));
-      localStorage.setItem('thanaweya_adhkar_date', new Date().toDateString());
+      localStorage.setItem('thanaweya_adhkar_date', getTodayISO());
     } catch (e) {
       console.error(e);
     }
   }, [progress]);
 
+  // Listen for new day reset
+  useEffect(() => {
+    const handleNewDay = () => {
+      setProgress({});
+    };
+    window.addEventListener(NEW_DAY_RESET_EVENT, handleNewDay);
+    return () => window.removeEventListener(NEW_DAY_RESET_EVENT, handleNewDay);
+  }, []);
+
   const currentList = activeTab === 'sabah' ? SABAH_ADHKAR : MASSA_ADHKAR;
 
   const handleIncrement = (item: DhikrItem, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    recordDailyProgressActivity();
     
     const currentCount = progress[item.id] || 0;
     if (currentCount >= item.repeat) return; // already completed

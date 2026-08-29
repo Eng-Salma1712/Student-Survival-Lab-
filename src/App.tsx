@@ -20,38 +20,52 @@ import {
   checkStreakOnLoad,
   processCompletedSession,
 } from './utils/gamification';
+import {
+  checkAndHandleNewDay,
+  NEW_DAY_RESET_EVENT,
+  recordDailyProgressActivity,
+} from './utils/dailyAchievementTracker';
+import { DEFAULT_THREE_SESSION_PLAN } from './data/defaultPlan';
+import {
+  getStoredUserIdentity,
+  saveUserIdentity,
+  IDENTITY_UPDATED_EVENT,
+} from './utils/userProfile';
 
 export default function App() {
-  const [currentResult, setCurrentResult] = useState<DiagnosisResult | null>(null);
-
-  const [identity, setIdentity] = useState<UserIdentity | null>(() => {
+  const [currentResult, setCurrentResult] = useState<DiagnosisResult | null>(() => {
     try {
-      const saved = localStorage.getItem('thanaweya_user_identity');
-      return saved
-        ? JSON.parse(saved)
-        : {
-            name: 'سلمى',
-            gender: 'female',
-            category: 'medicine',
-            collegeName: 'كلية الطب البشري',
-            stage: 'secondary',
-            track: 'scientific',
-            grade: 'sec_3',
-            gradeLabel: 'الصف الثالث الثانوي (الثانوية العامة)',
-          };
+      const saved = localStorage.getItem('thanaweya_current_plan');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.studyPlan?.length > 0) return parsed;
+      }
+      return DEFAULT_THREE_SESSION_PLAN;
     } catch {
-      return {
-        name: 'سلمى',
-        gender: 'female',
-        category: 'medicine',
-        collegeName: 'كلية الطب البشري',
-        stage: 'secondary',
-        track: 'scientific',
-        grade: 'sec_3',
-        gradeLabel: 'الصف الثالث الثانوي (الثانوية العامة)',
-      };
+      return DEFAULT_THREE_SESSION_PLAN;
     }
   });
+
+  const [identity, setIdentity] = useState<UserIdentity | null>(() => {
+    return getStoredUserIdentity();
+  });
+
+  useEffect(() => {
+    const handleIdentityUpdate = (e: any) => {
+      if (e?.detail) {
+        setIdentity(e.detail);
+      } else {
+        const stored = getStoredUserIdentity();
+        if (stored) setIdentity(stored);
+      }
+    };
+    window.addEventListener(IDENTITY_UPDATED_EVENT, handleIdentityUpdate);
+    window.addEventListener('storage', handleIdentityUpdate);
+    return () => {
+      window.removeEventListener(IDENTITY_UPDATED_EVENT, handleIdentityUpdate);
+      window.removeEventListener('storage', handleIdentityUpdate);
+    };
+  }, []);
 
   const [unlockedEvent, setUnlockedEvent] = useState<{ badges: Badge[]; pointsEarned: number; bonusPoints: number; } | null>(null);
 
@@ -83,10 +97,65 @@ export default function App() {
     }
   });
 
-  useEffect(() => { if (identity) localStorage.setItem('thanaweya_user_identity', JSON.stringify(identity)); }, [identity]);
+  useEffect(() => { if (identity) saveUserIdentity(identity); }, [identity]);
   useEffect(() => { localStorage.setItem('study_engine_history', JSON.stringify(history)); }, [history]);
   useEffect(() => { if (goal) localStorage.setItem('thanaweya_student_goal', JSON.stringify(goal)); }, [goal]);
   useEffect(() => { localStorage.setItem('thanaweya_gamification_state', JSON.stringify(gamification)); }, [gamification]);
+  useEffect(() => {
+    if (currentResult) {
+      localStorage.setItem('thanaweya_current_plan', JSON.stringify(currentResult));
+    }
+  }, [currentResult]);
+
+  // New Day Detection Lifecycle
+  useEffect(() => {
+    const runNewDayCheck = () => {
+      const res = checkAndHandleNewDay();
+      if (res.isNewDay) {
+        try {
+          const savedG = localStorage.getItem('thanaweya_gamification_state');
+          if (savedG) setGamification(JSON.parse(savedG));
+          const savedP = localStorage.getItem('thanaweya_current_plan');
+          if (savedP) setCurrentResult(JSON.parse(savedP));
+        } catch (e) {
+          console.error('Error reloading state after new day:', e);
+        }
+      }
+    };
+
+    // 1. Run immediately on app load
+    runNewDayCheck();
+
+    // 2. Listen for custom new day reset event
+    const handleNewDayEvent = () => {
+      try {
+        const savedG = localStorage.getItem('thanaweya_gamification_state');
+        if (savedG) setGamification(JSON.parse(savedG));
+        const savedP = localStorage.getItem('thanaweya_current_plan');
+        if (savedP) setCurrentResult(JSON.parse(savedP));
+      } catch (e) {}
+    };
+    window.addEventListener(NEW_DAY_RESET_EVENT, handleNewDayEvent);
+
+    // 3. Listen for window visibility change & focus (e.g. phone wake up)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        runNewDayCheck();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', runNewDayCheck);
+
+    // 4. Check periodically (every 60 seconds) for midnight rollover
+    const interval = setInterval(runNewDayCheck, 60000);
+
+    return () => {
+      window.removeEventListener(NEW_DAY_RESET_EVENT, handleNewDayEvent);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', runNewDayCheck);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleSaveGoal = (newGoal: StudentGoal) => setGoal(newGoal);
 
@@ -94,6 +163,7 @@ export default function App() {
     const isDifficult = currentResult?.inputsSummary?.difficultSubjects?.includes(session.subject) || false;
     const { updatedState, pointsEarned, bonusPoints, newlyUnlockedBadges } = processCompletedSession(gamification, session, isDifficult);
     setGamification(updatedState);
+    recordDailyProgressActivity();
     
     fetch('/api/notifications/activity', {
       method: 'POST',

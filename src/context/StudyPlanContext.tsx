@@ -84,7 +84,9 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (parsed.gradeLabel) studentGradeLabel = parsed.gradeLabel;
         if (parsed.collegeName) targetGoal = parsed.collegeName;
       }
-      const savedGoal = localStorage.getItem('student_goal');
+      const savedGoal =
+        localStorage.getItem('thanaweya_student_goal') ||
+        localStorage.getItem('student_goal');
       if (savedGoal) {
         const parsedG = JSON.parse(savedGoal);
         if (parsedG.targetTitle) targetGoal = parsedG.targetTitle;

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PageContainer } from '../components/PageContainer';
 import { UserPersonalizationWidget, getTitleInfo } from '../components/UserPersonalizationWidget';
+import { saveUserIdentity } from '../utils/userProfile';
 import { UserIdentity, StudentGoal, EducationStage, SecondaryTrack } from '../types';
 import {
   GraduationCap,
@@ -18,6 +19,7 @@ import {
   Settings,
   Target,
   Edit3,
+  RotateCcw,
 } from 'lucide-react';
 import {
   SCIENTIFIC_COLLEGES,
@@ -57,7 +59,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   // Goal & College selection local states
   const [isEditingGoal, setIsEditingGoal] = useState<boolean>(!goal);
   const [targetTitle, setTargetTitle] = useState<string>(
-    goal?.targetTitle || userIdentity?.collegeName || 'كلية الطب (95%+)'
+    goal?.targetTitle || userIdentity?.collegeName || ''
   );
   const [percentageGoal, setPercentageGoal] = useState<string>(
     goal?.percentageGoal || '95%+'
@@ -66,7 +68,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     goal?.targetExamDate || DEFAULT_EXAM_DATE
   );
   const [importanceReason, setImportanceReason] = useState<string>(
-    goal?.importanceReason || REASON_PRESETS[0]
+    goal?.importanceReason || ''
   );
   const [customGoalInput, setCustomGoalInput] = useState<string>('');
   const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
@@ -127,10 +129,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
     // Synchronize with user identity collegeName
     if (userIdentity) {
-      onSaveIdentity({
+      const updatedIdentity = {
         ...userIdentity,
         collegeName: finalTitle,
-      });
+      };
+      saveUserIdentity(updatedIdentity);
+      onSaveIdentity(updatedIdentity);
     }
 
     setIsEditingGoal(false);
@@ -551,6 +555,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     <span className="text-[10px] text-[#6B6B6B] block mt-0.5">{item.desc}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Clear and Reset Data for Fresh Start */}
+            <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-extrabold text-rose-900">إعادة ضبط البيانات والبدء كطالب جديد</h4>
+                  <p className="text-[11px] text-rose-700">مسح الملف الشخصي الحالي والبدء من الصفر على هذا الجهاز</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const confirmed = window.confirm('هل أنت متأكد من مسح بيانات ملفك الحالي والبدء من جديد كطالب جديد على هذا المتصفح؟');
+                    if (confirmed) {
+                      localStorage.removeItem('thanaweya_user_identity');
+                      localStorage.removeItem('thanaweya_student_goal');
+                      localStorage.removeItem('student_goal');
+                      localStorage.removeItem('thanaweya_gamification_state');
+                      localStorage.removeItem('thanaweya_current_plan');
+                      localStorage.removeItem('study_engine_history');
+                      localStorage.removeItem('thanaweya_daily_progress_date');
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-3 py-2 rounded-xl bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 transition-colors text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>مسح البيانات وبدء ملف جديد</span>
+                </button>
               </div>
             </div>
 

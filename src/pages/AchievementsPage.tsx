@@ -3,6 +3,7 @@ import { PageContainer } from '../components/PageContainer';
 import { GamificationWidget } from '../components/GamificationWidget';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { DailyCertificateModal } from '../components/DailyCertificateModal';
+import { DailyRolloverSimulator } from '../components/DailyRolloverSimulator';
 import { GamificationState, DailyCertificateData } from '../types';
 import { ALL_BADGES } from '../utils/gamification';
 import { getEarnedCertificates } from '../utils/dailyAchievementTracker';
@@ -201,6 +202,9 @@ export const AchievementsPage: React.FC<AchievementsPageProps> = ({ gamification
             })}
           </div>
         </div>
+
+        {/* New Day System & Streak Testing Simulator */}
+        <DailyRolloverSimulator gamification={gamification} />
 
         {/* In-Place Badges Showcase */}
         <div className="card-surface p-5 sm:p-6 border border-[#E5E5E5] space-y-4">

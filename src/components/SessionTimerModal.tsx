@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StudySession } from '../types';
 import { Play, Pause, RotateCcw, X, CheckCircle, Clock, BookOpen, ChevronDown, ChevronUp, Sparkles, ExternalLink } from 'lucide-react';
+import { toArabicDigits } from '../utils/timeFormat';
 
 interface SessionTimerModalProps {
   session: StudySession;
@@ -90,7 +91,7 @@ export const SessionTimerModal: React.FC<SessionTimerModalProps> = ({
               !isBreakMode ? 'bg-[#E5E5E5] text-[#2A2A2A]' : 'text-[#6B6B6B] hover:text-[#2A2A2A]'
             }`}
           >
-            التركيز ({session.durationMinutes} د)
+            التركيز ({toArabicDigits(session.durationMinutes)} د)
           </button>
           <button
             onClick={() => switchMode(true)}
@@ -98,13 +99,13 @@ export const SessionTimerModal: React.FC<SessionTimerModalProps> = ({
               isBreakMode ? 'bg-emerald-500/20 text-emerald-400' : 'text-[#6B6B6B] hover:text-[#2A2A2A]'
             }`}
           >
-            الاستراحة ({session.breakMinutes} د)
+            الاستراحة ({toArabicDigits(session.breakMinutes)} د)
           </button>
         </div>
 
         <div className="py-6 flex flex-col items-center justify-center space-y-6">
           <div className="text-6xl sm:text-7xl font-black tracking-tighter font-mono text-[#2A2A2A]">
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            {toArabicDigits(String(minutes).padStart(2, '0'))}:{toArabicDigits(String(seconds).padStart(2, '0'))}
           </div>
 
           <div className="w-full bg-white h-2 rounded-full overflow-hidden border border-[#E5E5E5]">

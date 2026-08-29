@@ -18,6 +18,7 @@ import {
   LITERARY_COLLEGES,
   PREP_GOAL_SUGGESTIONS,
 } from '../utils/educationConfig';
+import { toArabicDigits } from '../utils/timeFormat';
 
 interface GoalWidgetProps {
   goal: StudentGoal | null;
@@ -39,7 +40,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
   onSaveGoal,
   userIdentity,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(!goal);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   // Determine initial category based on user track / stage
   const initialCategory =
@@ -54,10 +55,10 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
   );
 
   const [targetTitle, setTargetTitle] = useState<string>(
-    goal?.targetTitle || userIdentity?.collegeName || 'كلية الطب (95%+)'
+    goal?.targetTitle || userIdentity?.collegeName || ''
   );
   const [importanceReason, setImportanceReason] = useState<string>(
-    goal?.importanceReason || 'علشان أفرح أمي وأبويا وأحقق حلم طفولتي'
+    goal?.importanceReason || ''
   );
   const [targetExamDate, setTargetExamDate] = useState<string>(
     goal?.targetExamDate || DEFAULT_EXAM_DATE
@@ -165,9 +166,12 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
   };
 
   const displayTargetCollege =
-    goal?.targetTitle || userIdentity?.collegeName || 'كلية الأحلام (95%+)';
+    goal?.targetTitle ||
+    userIdentity?.collegeName ||
+    'لم يتم تحديد الكلية أو الهدف بعد 🎯';
   const displayMotivation =
-    goal?.importanceReason || 'علشان أفرح أمي وأبويا وأحقق حلم طفولتي في القمة';
+    goal?.importanceReason ||
+    'حدد رسالة الدافع الخاصة بك لتلهمك يومياً أثناء المذاكرة ✨';
 
   const isPrep = userIdentity?.stage === 'prep';
   const stageMotivationText = isPrep
@@ -205,7 +209,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
                 متبقي للامتحان
               </div>
               <div className="text-xl font-black text-[#D15F70] font-heading leading-none">
-                {timeLeft.days} <span className="text-xs text-[#6B6B6B] font-normal">يوم</span>
+                {toArabicDigits(timeLeft.days)} <span className="text-xs text-[#6B6B6B] font-normal">يوم</span>
               </div>
             </div>
 
@@ -215,7 +219,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
               className="btn-secondary px-3.5 py-2.5 text-xs flex items-center gap-1.5 cursor-pointer"
             >
               <Edit3 className="w-4 h-4" />
-              <span>تعديل الهدف</span>
+              <span>{goal ? 'تعديل الهدف' : 'تحديد الهدف'}</span>
             </button>
           </div>
         </div>
@@ -523,7 +527,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="مثال: كلية الطب البشري (95%+)"
+                    placeholder="مثال: كلية الهندسة / كلية الطب / كلية الألسن (95%+)"
                     value={targetTitle}
                     onChange={(e) => setTargetTitle(e.target.value)}
                     className="w-full bg-white border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-[#2A2A2A] focus:border-[#D15F70] outline-none shadow-2xs"

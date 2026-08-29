@@ -4,8 +4,13 @@ import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap
 import { GamificationState, StudentGoal, DiagnosisResult, UserIdentity, DailyCertificateData } from '../types';
 import { GoalWidget } from '../components/GoalWidget';
 import { RescueModeModal } from '../components/RescueModeModal';
-import { DailyAchievementTrackerWidget } from '../components/DailyAchievementTrackerWidget';
 import { DailyCertificateModal } from '../components/DailyCertificateModal';
+import { getTitleInfo } from '../components/UserPersonalizationWidget';
+import {
+  formatWelcomeGreeting,
+  getStoredUserIdentity,
+  IDENTITY_UPDATED_EVENT,
+} from '../utils/userProfile';
 import {
   evaluateDailyConditions,
   createCertificateData,
@@ -26,6 +31,41 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSaveGoal, history, currentResult, userIdentity }) => {
   const navigate = useNavigate();
 
+  // Dynamic user profile resolution and reactive updates
+  const [effectiveIdentity, setEffectiveIdentity] = useState<UserIdentity | null>(() => {
+    if (userIdentity && typeof userIdentity.name === 'string' && userIdentity.name.trim().length > 0) {
+      return userIdentity;
+    }
+    return getStoredUserIdentity();
+  });
+
+  useEffect(() => {
+    if (userIdentity && typeof userIdentity.name === 'string' && userIdentity.name.trim().length > 0) {
+      setEffectiveIdentity(userIdentity);
+    } else {
+      const stored = getStoredUserIdentity();
+      if (stored) setEffectiveIdentity(stored);
+    }
+  }, [userIdentity]);
+
+  useEffect(() => {
+    const handleIdentityUpdate = (e: any) => {
+      if (e?.detail) {
+        setEffectiveIdentity(e.detail);
+      } else {
+        const stored = getStoredUserIdentity();
+        setEffectiveIdentity(stored);
+      }
+    };
+
+    window.addEventListener(IDENTITY_UPDATED_EVENT, handleIdentityUpdate);
+    window.addEventListener('storage', handleIdentityUpdate);
+    return () => {
+      window.removeEventListener(IDENTITY_UPDATED_EVENT, handleIdentityUpdate);
+      window.removeEventListener('storage', handleIdentityUpdate);
+    };
+  }, []);
+
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [isRescueModeOpen, setIsRescueModeOpen] = useState(false);
   const [dailyCertModalOpen, setDailyCertModalOpen] = useState(false);
@@ -36,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
     const checkDailyCertificateTrigger = () => {
       const status = evaluateDailyConditions(currentResult);
       if (status.allCompleted && !isCertificateAwardedToday()) {
-        const cert = createCertificateData(userIdentity || null, status);
+        const cert = createCertificateData(effectiveIdentity || userIdentity || null, status);
         saveEarnedCertificate(cert);
         setDailyCertData(cert);
         setDailyCertModalOpen(true);
@@ -49,12 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
     // Listen for habit/prayer/adhkar/session completions
     window.addEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyCertificateTrigger);
     return () => window.removeEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyCertificateTrigger);
-  }, [currentResult, userIdentity]);
-
-  const handleOpenDailyCert = (cert: DailyCertificateData) => {
-    setDailyCertData(cert);
-    setDailyCertModalOpen(true);
-  };
+  }, [currentResult, effectiveIdentity, userIdentity]);
 
   useEffect(() => {
     const DEFAULT_EXAM_DATE = '2027-06-26';
@@ -100,6 +135,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
     }
   ];
 
+  const { greeting, hasProfile } = formatWelcomeGreeting(effectiveIdentity);
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 pb-24 font-sans dir-rtl animate-in fade-in duration-300">
       
@@ -136,11 +173,50 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
             <span className="text-2xl">🚀</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[#2A2A2A] font-heading">أهلاً بك في Student Survival Lab</h1>
+            <h1 className="text-xl font-bold text-[#2A2A2A] font-heading">
+              {greeting}
+            </h1>
             <p className="text-[#6B6B6B] text-sm mt-1">نظم وقتك، التزم بخطتك، وحقق حلمك!</p>
           </div>
         </div>
+        {!hasProfile && (
+          <button
+            onClick={() => navigate('/profile')}
+            className="relative z-10 btn-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
+          >
+            <span>تهيئة ملفك الآن</span>
+            <span>←</span>
+          </button>
+        )}
       </div>
+
+      {/* If student has not configured profile yet, show a welcoming setup card */}
+      {!hasProfile && (
+        <div className="card-surface p-5 sm:p-6 border-2 border-dashed border-[#D15F70]/40 bg-gradient-to-r from-rose-50/50 via-amber-50/30 to-emerald-50/40 rounded-2xl shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#D15F70] text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
+                ✨
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-[#2A2A2A] font-heading">
+                  مرحباً بك يا بطل! ابدأ بتهيئة ملفك الدراسي 👋
+                </h2>
+                <p className="text-xs sm:text-sm text-[#6B6B6B] mt-0.5">
+                  حدد مرحلتك الدراسية (إعدادي / ثانوي) وشعبتك وهدفك لتخصيص المواد وجداول المذاكرة المناسبة لك فوراً.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="btn-primary w-full sm:w-auto px-5 py-2.5 text-xs font-bold flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0"
+            >
+              <span>إعداد الملف الشخصي الآن</span>
+              <span>←</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Top Persistent Stats Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -173,15 +249,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
             <div className="text-lg font-black text-[#2A2A2A]">{daysRemaining}</div>
           </div>
         </div>
-      </div>
-
-      {/* Daily 4-Condition Achievement Tracker */}
-      <div>
-        <DailyAchievementTrackerWidget
-          currentResult={currentResult}
-          userIdentity={userIdentity}
-          onOpenCertificate={handleOpenDailyCert}
-        />
       </div>
 
       {/* Goal & Countdown directly on Home Screen */}
