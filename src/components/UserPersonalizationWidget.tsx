@@ -43,14 +43,14 @@ export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps>
     e.preventDefault();
     if (!name.trim()) return;
     
-    let defaultCollege = 'الكلية الحلم';
+    let defaultCollege = '';
     if (category === 'medicine') defaultCollege = 'كلية الطب';
     if (category === 'engineering') defaultCollege = 'كلية الهندسة';
     if (category === 'computing') defaultCollege = 'كلية الحاسبات والمعلومات';
     if (category === 'arts') defaultCollege = 'كلية الفنون والتصميم';
     if (category === 'literature') defaultCollege = 'كلية الألسن والآداب';
     if (category === 'other') {
-      defaultCollege = stage === 'prep' ? 'مدارس المتفوقين (STEM)' : 'الكلية الحلم';
+      defaultCollege = stage === 'prep' ? 'مدارس المتفوقين (STEM)' : '';
     }
 
     const currentGradeOptions = stage === 'prep' ? PREP_GRADES : SECONDARY_GRADES;
@@ -124,7 +124,7 @@ export const UserPersonalizationWidget: React.FC<UserPersonalizationWidgetProps>
           <span>•</span>
           <span className="flex items-center gap-1">
             <GraduationCap className="w-3.5 h-3.5 text-slate-500" />
-            الهدف: <strong className="text-[#2A2A2A]">{identity.collegeName}</strong>
+            الهدف: <strong className="text-[#2A2A2A]">{identity.collegeName && identity.collegeName !== 'الكلية الحلم' ? identity.collegeName : 'لم يتم تحديد الهدف بعد'}</strong>
           </span>
         </div>
       </div>

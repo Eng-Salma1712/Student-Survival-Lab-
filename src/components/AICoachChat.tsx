@@ -18,6 +18,9 @@ import {
   Clock,
   CheckCircle2,
   ChevronLeft,
+  MessageSquare,
+  Plus,
+  Menu,
   Paperclip,
   Image as ImageIcon,
   FileText,
@@ -40,6 +43,13 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   attachments?: ChatAttachment[];
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: ChatMessage[];
 }
 
 interface AICoachChatProps {
@@ -102,32 +112,53 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const { toast } = useToast();
   const [isDragOver, setIsDragOver] = useState(false);
-
-
+  const [showHistory, setShowHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const generateWelcomeMessage = (): ChatMessage[] => {
+    const hasRealGoal = goal?.targetTitle || userIdentity?.collegeName;
+    const goalText = hasRealGoal ? `\n\n✨ هدفك بالوصول إلى (${collegeName}) يستحق كل سعي.` : '';
+    return [
+      {
+        id: `welcome-${Date.now()}`,
+        role: 'model',
+        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **الرفيق** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀\n\n**تجربة دعم المعادلات الرياضية (LaTeX):**\nالتيار الكهربي: $$I = \\frac{Q}{t}$$\nحيث $I$ هو شدة التيار، $Q$ الشحنة، و $t$ الزمن.\n\nتجربة الكيمياء:\n$$8H_2SO_4_{(conc)} \\xrightarrow{\\Delta} FeSO_4 + Fe_2(SO_4)_3 + 4SO_2\\uparrow + 8H_2O$$`,
+        timestamp: Date.now(),
+      }
+    ];
+  };
+
+  const [sessions, setSessions] = useState<ChatSession[]>(() => {
+    try {
+      const saved = localStorage.getItem('thanaweya_chat_sessions_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem('thanaweya_chat_sessions_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0].id;
+      }
+    } catch {}
+    return null;
+  });
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = localStorage.getItem('thanaweya_ai_coach_chat_history_v2');
+      const saved = localStorage.getItem('thanaweya_chat_sessions_v1');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0].messages;
       }
-    } catch {
-      // ignore
-    }
-
-    const hasRealGoal = goal?.targetTitle || userIdentity?.collegeName;
-    const goalText = hasRealGoal ? `\n\n✨ هدفك بالوصول إلى (${collegeName}) يستحق كل سعي.` : '';
-
-    return [
-      {
-        id: 'welcome-msg',
-        role: 'model',
-        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **Student Survival AI** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀\n\n**تجربة دعم المعادلات الرياضية (LaTeX):**\nالتيار الكهربي: $$I = \\frac{Q}{t}$$\nحيث $I$ هو شدة التيار، $Q$ الشحنة، و $t$ الزمن.`,
-        timestamp: Date.now(),
-      },
-    ];
+    } catch {}
+    return generateWelcomeMessage();
   });
 
   const [inputText, setInputText] = useState('');
@@ -135,13 +166,62 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('thanaweya_ai_coach_chat_history_v2', JSON.stringify(messages));
-    } catch {
-      // ignore
-    }
     scrollToBottom();
-  }, [messages]);
+
+    const hasUserMsg = messages.some(m => m.role === 'user');
+    if (!hasUserMsg) return;
+
+    setSessions(prevSessions => {
+      let updatedSessions = [...prevSessions];
+      
+      if (!currentSessionId) {
+        const newId = `session-${Date.now()}`;
+        const titleMatch = messages.find(m => m.role === 'user')?.text || '';
+        const title = titleMatch.slice(0, 40) + (titleMatch.length > 40 ? '...' : '');
+        
+        const newSession: ChatSession = {
+          id: newId,
+          title: title || 'محادثة جديدة',
+          updatedAt: Date.now(),
+          messages: messages
+        };
+        updatedSessions.unshift(newSession);
+        setCurrentSessionId(newId);
+      } else {
+        const idx = updatedSessions.findIndex(s => s.id === currentSessionId);
+        if (idx !== -1) {
+          updatedSessions[idx] = {
+            ...updatedSessions[idx],
+            updatedAt: Date.now(),
+            messages: messages
+          };
+          const [updatedSession] = updatedSessions.splice(idx, 1);
+          updatedSessions.unshift(updatedSession);
+        } else {
+          const titleMatch = messages.find(m => m.role === 'user')?.text || '';
+          const title = titleMatch.slice(0, 40) + (titleMatch.length > 40 ? '...' : '');
+          updatedSessions.unshift({
+            id: currentSessionId,
+            title: title || 'محادثة',
+            updatedAt: Date.now(),
+            messages: messages
+          });
+        }
+      }
+
+      if (updatedSessions.length > 25) {
+        updatedSessions = updatedSessions.slice(0, 25);
+      }
+
+      try {
+        localStorage.setItem('thanaweya_chat_sessions_v1', JSON.stringify(updatedSessions));
+      } catch (e) {
+        console.error('Failed to save chat sessions', e);
+      }
+
+      return updatedSessions;
+    });
+  }, [messages, currentSessionId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -259,14 +339,16 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
     }
   };
 
-  const handleClearChat = () => {
-    const initialMsg: ChatMessage = {
-      id: `welcome-${Date.now()}`,
-      role: 'model',
-      text: `أهلاً بك يا ${titleInfo.formalTitle} من جديد! أنا **Student Survival AI** مساعدك الأكاديمي والروحي الشامل.\n\nأنا هنا للإجابة على أي سؤال دراسي، أو شرح المفاهيم المعقدة، أو المساعدة في التخطيط. كيف يمكنني مساعدتك الآن؟ 🚀`,
-      timestamp: Date.now(),
-    };
-    setMessages([initialMsg]);
+  const startNewChat = () => {
+    setCurrentSessionId(null);
+    setMessages(generateWelcomeMessage());
+    setShowHistory(false);
+  };
+
+  const loadSession = (session: ChatSession) => {
+    setCurrentSessionId(session.id);
+    setMessages(session.messages);
+    setShowHistory(false);
   };
 
 
@@ -301,7 +383,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-base tracking-tight font-heading">
-                Student Survival AI
+                الرفيق
               </h3>
               <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F5F5F5] text-[#9E4D68] border border-[#E5E5E5] truncate max-w-[150px]">
                 المساعد الأكاديمي والروحي الشامل
@@ -317,11 +399,19 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
           {/* Quick Tools Action Shortcuts */}
           <button
             type="button"
-            onClick={handleClearChat}
-            title="مسح المحادثة وبدء حوار جديد"
+            onClick={() => setShowHistory(!showHistory)}
+            title="سجل المحادثات"
+            className={`p-2 rounded-xl transition-colors cursor-pointer text-xs flex items-center gap-2 ${showHistory ? 'bg-[#D15F70] text-white' : 'hover:bg-[#F5F5F5] text-[#6B6B6B] hover:text-[#2A2A2A]'}`}
+          >
+            <Menu className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={startNewChat}
+            title="محادثة جديدة"
             className="p-2 hover:bg-[#F5F5F5] rounded-xl text-[#6B6B6B] hover:text-[#2A2A2A] transition-colors cursor-pointer text-xs"
           >
-            <RefreshCw className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
           {onClose && (
             <button
@@ -371,24 +461,58 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
         })}
       </div>
 
-      {/* Drag & Drop Visual Overlay */}
-      {isDragOver && (
-        <div className="p-4 bg-pink-50 dark:bg-pink-950/80 border-2 border-dashed border-pink-500 rounded-2xl mx-4 my-2 text-center text-xs font-black text-pink-600 dark:text-pink-300 flex items-center justify-center gap-2">
-          <UploadCloud className="w-5 h-5 animate-bounce" />
-          <span>أفلت ملف الـ PDF أو صورة المسألة هنا لتحليلها فوراً!</span>
+      {showHistory ? (
+        <div className="flex-1 overflow-y-auto px-2 py-4 sm:p-5 space-y-3 bg-slate-50/50 bg-white/40">
+          <h4 className="text-sm font-bold text-[#2A2A2A] mb-4">سجل المحادثات</h4>
+          {sessions.length === 0 ? (
+            <div className="text-center text-xs text-[#6B6B6B] mt-10">
+              لا توجد محادثات سابقة بعد
+            </div>
+          ) : (
+            sessions.map((session) => (
+              <div 
+                key={session.id} 
+                onClick={() => loadSession(session)}
+                className={`p-3 rounded-xl border transition-colors cursor-pointer ${currentSessionId === session.id ? 'border-[#D15F70] bg-pink-50' : 'border-[#E5E5E5] bg-white hover:bg-[#F5F5F5]'}`}
+              >
+                <div className="text-sm font-bold text-[#2A2A2A] truncate mb-1">
+                  {session.title}
+                </div>
+                <div className="text-[10px] text-[#6B6B6B] flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
+                  {new Date(session.updatedAt).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      )}
+      ) : (
+        <>
+          {/* Drag & Drop Visual Overlay */}
+          {isDragOver && (
+            <div className="p-4 bg-pink-50 dark:bg-pink-950/80 border-2 border-dashed border-pink-500 rounded-2xl mx-4 my-2 text-center text-xs font-black text-pink-600 dark:text-pink-300 flex items-center justify-center gap-2">
+              <UploadCloud className="w-5 h-5 animate-bounce" />
+              <span>أفلت ملف الـ PDF أو صورة المسألة هنا لتحليلها فوراً!</span>
+            </div>
+          )}
 
-      {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto px-2 py-4 sm:p-5 space-y-4 bg-slate-50/50 bg-white/40">
+          {/* Messages Thread */}
+          <div className="flex-1 overflow-y-auto px-2 py-4 sm:p-5 space-y-4 bg-slate-50/50 bg-white/40">
         {messages.map((msg) => {
           const isUser = msg.role === 'user';
-          // Clean display text from internal tags
-          const cleanText = msg.text
+          // Clean display text from internal tags and fix LaTeX syntax errors (like double subscripts)
+          let cleanText = msg.text
             .replace(/\[FLASHCARDS\][\s\S]*?\[\/FLASHCARDS\]/g, '')
             .replace(/\[WEEKLY_CERTIFICATE\][\s\S]*?\[\/WEEKLY_CERTIFICATE\]/g, '')
             .replace(/\[DAILY_ACHIEVEMENT\][\s\S]*?\[\/DAILY_ACHIEVEMENT\]/g, '')
             .trim();
+          
+          let prevText;
+          do {
+            prevText = cleanText;
+            cleanText = cleanText.replace(/_([a-zA-Z0-9]|\{[^}]*\})_/g, '_$1{}_');
+            cleanText = cleanText.replace(/\^([a-zA-Z0-9]|\{[^}]*\})\^/g, '^$1{}^');
+          } while (cleanText !== prevText);
 
           return (
             <div
@@ -433,7 +557,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
                 <div dir="auto" className="prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 prose-pre:p-2 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-a:text-pink-600 prose-a:underline">
                   <ReactMarkdown
                     remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
+                    rehypePlugins={[[rehypeKatex, { strict: false }]]}
                   >
                     {cleanText || msg.text}
                   </ReactMarkdown>
@@ -458,7 +582,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
             <div className="w-8 h-8 rounded-2xl bg-[#D15F70] text-white flex items-center justify-center">
               <Bot className="w-4 h-4 animate-spin" />
             </div>
-            <span>Student Survival AI يحلل المحتوى ويعد الشرح والحل العملي… ✍️</span>
+            <span>الرفيق يحلل المحتوى ويعد الشرح والحل العملي… ✍️</span>
           </div>
         )}
 
@@ -556,6 +680,8 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
           <Send className="w-4 h-4 rotate-180" />
         </button>
       </form>
+      </>
+      )}
 
       {/* Modals */}
     </div>

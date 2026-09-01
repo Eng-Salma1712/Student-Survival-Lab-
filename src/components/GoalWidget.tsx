@@ -26,8 +26,6 @@ interface GoalWidgetProps {
   userIdentity?: UserIdentity | null;
 }
 
-const DEFAULT_EXAM_DATE = '2027-06-26';
-
 const REASON_SUGGESTIONS = [
   'لأن أهلي تعبوا معايا جداً ونفسي أشوف دموع الفرحة والافتخار في عينيهم 🥹',
   'علشان أحقق حلم طفولتي وأثبت لنفسي وقدراتي إني أستحق القمة 🚀',
@@ -55,13 +53,13 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
   );
 
   const [targetTitle, setTargetTitle] = useState<string>(
-    goal?.targetTitle || userIdentity?.collegeName || ''
+    goal?.targetTitle || (userIdentity?.collegeName && userIdentity.collegeName !== 'الكلية الحلم' ? userIdentity.collegeName : '')
   );
   const [importanceReason, setImportanceReason] = useState<string>(
     goal?.importanceReason || ''
   );
   const [targetExamDate, setTargetExamDate] = useState<string>(
-    goal?.targetExamDate || DEFAULT_EXAM_DATE
+    goal?.targetExamDate || ''
   );
 
   // Custom added colleges state
@@ -87,9 +85,10 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
   const [showAddCustom, setShowAddCustom] = useState<boolean>(false);
   const [customCollegeInput, setCustomCollegeInput] = useState<string>('');
 
-  const [timeLeft, setTimeLeft] = useState(() => {
+  const [timeLeft, setTimeLeft] = useState<{days: number, hours: number, minutes: number, seconds: number} | null>(() => {
+    if (!targetExamDate) return null;
     const now = new Date().getTime();
-    const targetTime = new Date(targetExamDate || DEFAULT_EXAM_DATE).getTime();
+    const targetTime = new Date(targetExamDate).getTime();
     const diff = targetTime - now;
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
     return {
@@ -102,8 +101,12 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
 
   useEffect(() => {
     const calculateTime = () => {
+      if (!targetExamDate) {
+        setTimeLeft(null);
+        return;
+      }
       const now = new Date().getTime();
-      const targetTime = new Date(targetExamDate || DEFAULT_EXAM_DATE).getTime();
+      const targetTime = new Date(targetExamDate).getTime();
       const diff = targetTime - now;
       if (diff > 0) {
         setTimeLeft({
@@ -117,8 +120,11 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
       }
     };
     calculateTime();
-    const interval = setInterval(calculateTime, 1000);
-    return () => clearInterval(interval);
+    
+    if (targetExamDate) {
+      const interval = setInterval(calculateTime, 1000);
+      return () => clearInterval(interval);
+    }
   }, [targetExamDate]);
 
   const titleInfo = getTitleInfo(userIdentity);
@@ -158,7 +164,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
       importanceReason: importanceReason.trim()
         ? importanceReason.trim()
         : 'أريد صنع مستقبلي وإسعاد أهلي',
-      targetExamDate: targetExamDate || DEFAULT_EXAM_DATE,
+      targetExamDate: targetExamDate || '',
       createdAt: Date.now(),
     };
     onSaveGoal(newGoal);
@@ -167,7 +173,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
 
   const displayTargetCollege =
     goal?.targetTitle ||
-    userIdentity?.collegeName ||
+    (userIdentity?.collegeName && userIdentity?.collegeName !== 'الكلية الحلم' ? userIdentity?.collegeName : null) ||
     'لم يتم تحديد الكلية أو الهدف بعد 🎯';
   const displayMotivation =
     goal?.importanceReason ||
@@ -204,14 +210,25 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="text-center bg-[#F5F5F5] px-4 py-2 rounded-xl border border-[#E5E5E5]">
-              <div className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider mb-0.5">
-                متبقي للامتحان
+            {timeLeft !== null ? (
+              <div className="text-center bg-[#F5F5F5] px-4 py-2 rounded-xl border border-[#E5E5E5]">
+                <div className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider mb-0.5">
+                  متبقي للامتحان
+                </div>
+                <div className="text-xl font-black text-[#D15F70] font-heading leading-none">
+                  {toArabicDigits(timeLeft.days)} <span className="text-xs text-[#6B6B6B] font-normal">يوم</span>
+                </div>
               </div>
-              <div className="text-xl font-black text-[#D15F70] font-heading leading-none">
-                {toArabicDigits(timeLeft.days)} <span className="text-xs text-[#6B6B6B] font-normal">يوم</span>
-              </div>
-            </div>
+            ) : (
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="text-center bg-rose-50 px-3 py-2 rounded-xl border border-rose-100 hover:bg-rose-100 transition-colors"
+              >
+                <div className="text-[10px] text-rose-600 font-bold uppercase tracking-wider">
+                  حدد موعد الامتحان
+                </div>
+              </button>
+            )}
 
             <button
               type="button"

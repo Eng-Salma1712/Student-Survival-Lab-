@@ -13,7 +13,7 @@ export const BottomNav: React.FC = () => {
     { path: '/', icon: Home, label: 'الرئيسية' },
     { path: '/schedule', icon: Calendar, label: 'الجدول' },
     { path: '/spiritual', icon: BookOpen, label: 'الجانب الديني' },
-    { path: '/coach', icon: Bot, label: 'المستشار' },
+    { path: '/coach', icon: Bot, label: 'الرفيق' },
     { path: '/assessment', icon: Smile, label: 'التقييم' },
   ];
 

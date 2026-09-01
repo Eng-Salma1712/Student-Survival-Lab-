@@ -58,7 +58,11 @@ ADAPTIVE ENGINE RULES:
 3. BEFORE EXAMS (if upcoming exam is tomorrow, in a few days, or next week): Shift focus strictly away from passive reading towards 100% past exam practice, solving questions, and quick formula review.
 4. Dynamic Schedule Variation (Interleaving): Do NOT repeat the same subject in adjacent sessions. Interleave subjects (e.g. Math -> Physics practice -> Arabic review -> Chemistry) to boost long-term memory retention and avoid monotonous daily schedules.
 5. Provide adaptiveTags for sessions (e.g., "🔴 مادة ضعيفة: تكثيف الشرح والحل" | "🟢 مادة قوية: مراجعة خاطفة" | "🎯 تركيز امتحان: حل تدريبات").
-
+6. PROPORTIONAL SCHEDULING (CRITICAL): The number of generated sessions MUST be strictly proportional to the actual volume of content added by the student. 
+   - If the student inputs only ONE single lesson or topic (e.g., "فيزياء - الباب الأول - شرح جديد"), generate a MAXIMUM of 1 to 2 focused sessions for it (e.g., one deep "شرح وفهم" session, and optionally one short "حل تدريبات" if appropriate). Do NOT artificially inflate the schedule into 5+ fragmented sessions (like error analysis, quick recap, etc.) for a single lesson.
+   - Prioritize the core session type the student selected. If they marked it as "شرح جديد" (new explanation), focus the schedule entirely on deep understanding, NOT on unrelated tasks like error analysis for a lesson they haven't learned yet.
+   - Only generate multiple, varied session types (practice, recap, error review) when the student has added a large volume of content (multiple lessons/chapters) or is doing comprehensive exam prep.
+   - Respect realistic timing: The total time of the generated schedule should match the reasonable time required for the input content. Do not stretch a 2-hour lesson into a full 6-hour daily schedule unless the student explicitly added 6 hours worth of content.
 ---
 Output Structure (ALL TEXT IN ARABIC):
 - scenario: Exactly one of "Last Night", "Extremely Pressured", "Limited Time", "Regaining Control"
@@ -83,7 +87,7 @@ Output Structure (ALL TEXT IN ARABIC):
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', model: 'gemini-3.6-flash' });
+  res.json({ status: 'ok', model: 'gemini-3.7-flash' });
 });
 
 // Cache for prayer times: key: `${city}_${dateStr}`
@@ -231,7 +235,7 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
     });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.7-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -338,7 +342,7 @@ Student Data Input:
 `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.7-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,

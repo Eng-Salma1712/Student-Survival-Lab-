@@ -58,7 +58,7 @@ export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClos
         </div>
 
         <button onClick={() => { onClose(); navigate('/coach'); }} className="w-full btn-primary py-3 text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white border-transparent">
-          تحدث مع المستشار لإنشاء الخطة <ArrowLeft className="w-4 h-4" />
+          تحدث مع الرفيق لإنشاء الخطة <ArrowLeft className="w-4 h-4" />
         </button>
       </div>
     </div>

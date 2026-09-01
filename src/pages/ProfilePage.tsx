@@ -37,8 +37,6 @@ interface ProfilePageProps {
   onSaveGoal: (goal: StudentGoal) => void;
 }
 
-const DEFAULT_EXAM_DATE = '2027-06-26';
-
 const REASON_PRESETS = [
   'لأن أهلي تعبوا معايا جداً ونفسي أشوف دموع الفرحة والافتخار في عينيهم 🥹',
   'علشان أحقق حلم طفولتي وأثبت لنفسي وقدراتي إني أستحق القمة 🚀',
@@ -65,7 +63,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     goal?.percentageGoal || '95%+'
   );
   const [targetExamDate, setTargetExamDate] = useState<string>(
-    goal?.targetExamDate || DEFAULT_EXAM_DATE
+    goal?.targetExamDate || ''
   );
   const [importanceReason, setImportanceReason] = useState<string>(
     goal?.importanceReason || ''
@@ -115,7 +113,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   // Handle saving goal
   const handleSaveGoalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalTitle = targetTitle.trim() || 'الكلية الحلم';
+    const finalTitle = targetTitle.trim() || '';
 
     const updatedGoal: StudentGoal = {
       targetTitle: finalTitle,

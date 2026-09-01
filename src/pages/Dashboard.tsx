@@ -66,7 +66,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
     };
   }, []);
 
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   const [isRescueModeOpen, setIsRescueModeOpen] = useState(false);
   const [dailyCertModalOpen, setDailyCertModalOpen] = useState(false);
   const [dailyCertData, setDailyCertData] = useState<DailyCertificateData | null>(null);
@@ -92,8 +92,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
   }, [currentResult, effectiveIdentity, userIdentity]);
 
   useEffect(() => {
-    const DEFAULT_EXAM_DATE = '2027-06-26';
-    const targetDate = goal?.targetExamDate || DEFAULT_EXAM_DATE;
+    if (!goal?.targetExamDate) {
+      setDaysRemaining(null);
+      return;
+    }
+    const targetDate = goal.targetExamDate;
     const now = new Date().getTime();
     const targetTime = new Date(targetDate).getTime();
     const diff = targetTime - now;
@@ -127,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
       description: 'خطة المذاكرة المخصصة لك',
     },
     {
-      title: 'المستشار الذكي',
+      title: 'الرفيق',
       icon: <Bot className="w-8 h-8 text-[#528FBA]" />,
       bgClass: 'icon-bg-blue',
       path: '/coach',
@@ -232,7 +235,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
           </div>
           <div>
             <div className="text-[10px] font-bold text-[#6B6B6B] uppercase tracking-wider mb-0.5">متبقي للامتحان</div>
-            <div className="text-lg font-black text-[#2A2A2A]">{daysRemaining}</div>
+            <div className="text-lg font-black text-[#2A2A2A]">
+              {daysRemaining !== null ? daysRemaining : <span className="text-sm">غير محدد</span>}
+            </div>
           </div>
         </div>
       </div>

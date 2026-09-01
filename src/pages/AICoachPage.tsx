@@ -20,7 +20,7 @@ export const AICoachPage: React.FC<AICoachPageProps> = ({ userIdentity, goal }) 
 
       {/* Desktop: Card inside PageContainer */}
       <div className="hidden sm:block">
-        <PageContainer title="المستشار الذكي">
+        <PageContainer title="الرفيق">
           <div className="h-[calc(100vh-13rem)] w-full flex flex-col">
             {content}
           </div>
