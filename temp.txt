@@ -1,0 +1,10 @@
+
+const StudyPlanContext = createContext<StudyPlanContextType | undefined>(undefined);
+
+export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isExhausted, setIsExhausted] = useState<ExhaustionLevel>('medium');
+  const [availableHours, setAvailableHours] = useState<number>(4);
+  const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>('none');
+  const [examSubject, setExamSubject] = useState<string>('');
+
+  const [subjectTasks, setSubjectTasks] = useState<SubjectTask[]>([]);

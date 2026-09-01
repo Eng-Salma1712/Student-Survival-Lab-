@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { 
   ExhaustionLevel, ExamTimeline, ActivityType, MasteryLevel, SubjectTask, 
   PeakTime, LearningPreference, PlanPreference, StudentInput 
@@ -34,18 +34,39 @@ interface StudyPlanContextType {
 const StudyPlanContext = createContext<StudyPlanContextType | undefined>(undefined);
 
 export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [isExhausted, setIsExhausted] = useState<ExhaustionLevel>('medium');
-  const [availableHours, setAvailableHours] = useState<number>(4);
-  const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>('none');
-  const [examSubject, setExamSubject] = useState<string>('');
+  const [isExhausted, setIsExhausted] = useState<ExhaustionLevel>(() => (localStorage.getItem('thanaweya_is_exhausted') as ExhaustionLevel) || 'medium');
+  const [availableHours, setAvailableHours] = useState<number>(() => Number(localStorage.getItem('thanaweya_available_hours')) || 4);
+  const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>(() => (localStorage.getItem('thanaweya_upcoming_exam') as ExamTimeline) || 'none');
+  const [examSubject, setExamSubject] = useState<string>(() => localStorage.getItem('thanaweya_exam_subject') || '');
 
-  const [subjectTasks, setSubjectTasks] = useState<SubjectTask[]>([]);
-  const [subjectMastery, setSubjectMastery] = useState<Record<string, MasteryLevel>>({});
+  const [subjectTasks, setSubjectTasks] = useState<SubjectTask[]>(() => {
+    try {
+      const saved = localStorage.getItem('thanaweya_subject_tasks');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [subjectMastery, setSubjectMastery] = useState<Record<string, MasteryLevel>>(() => {
+    try {
+      const saved = localStorage.getItem('thanaweya_subject_mastery');
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
 
-  const [peakTime, setPeakTime] = useState<PeakTime>('evening');
-  const [learningPreference, setLearningPreference] = useState<LearningPreference>('practice');
-  const [planPreference, setPlanPreference] = useState<PlanPreference>('flexible');
-  const [additionalNotes, setAdditionalNotes] = useState<string>('');
+  const [peakTime, setPeakTime] = useState<PeakTime>(() => (localStorage.getItem('thanaweya_peak_time') as PeakTime) || 'evening');
+  const [learningPreference, setLearningPreference] = useState<LearningPreference>(() => (localStorage.getItem('thanaweya_learning_pref') as LearningPreference) || 'practice');
+  const [planPreference, setPlanPreference] = useState<PlanPreference>(() => (localStorage.getItem('thanaweya_plan_pref') as PlanPreference) || 'flexible');
+  const [additionalNotes, setAdditionalNotes] = useState<string>(() => localStorage.getItem('thanaweya_additional_notes') || '');
+
+  useEffect(() => { localStorage.setItem('thanaweya_is_exhausted', isExhausted); }, [isExhausted]);
+  useEffect(() => { localStorage.setItem('thanaweya_available_hours', availableHours.toString()); }, [availableHours]);
+  useEffect(() => { localStorage.setItem('thanaweya_upcoming_exam', upcomingExam); }, [upcomingExam]);
+  useEffect(() => { localStorage.setItem('thanaweya_exam_subject', examSubject); }, [examSubject]);
+  useEffect(() => { localStorage.setItem('thanaweya_subject_tasks', JSON.stringify(subjectTasks)); }, [subjectTasks]);
+  useEffect(() => { localStorage.setItem('thanaweya_subject_mastery', JSON.stringify(subjectMastery)); }, [subjectMastery]);
+  useEffect(() => { localStorage.setItem('thanaweya_peak_time', peakTime); }, [peakTime]);
+  useEffect(() => { localStorage.setItem('thanaweya_learning_pref', learningPreference); }, [learningPreference]);
+  useEffect(() => { localStorage.setItem('thanaweya_plan_pref', planPreference); }, [planPreference]);
+  useEffect(() => { localStorage.setItem('thanaweya_additional_notes', additionalNotes); }, [additionalNotes]);
 
   const generateInputPayload = (): StudentInput => {
     const uniqueSubjects: string[] = Array.from(new Set<string>(subjectTasks.map((t) => t.subject)));

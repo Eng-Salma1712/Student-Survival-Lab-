@@ -49,6 +49,14 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
     return () => window.removeEventListener(DAILY_ACHIEVEMENT_EVENT, checkDailyTrigger);
   }, [currentResult, userIdentity]);
 
+  // Purge ghost schedule if no subjects exist
+  useEffect(() => {
+    if (currentResult && subjectTasks.length === 0) {
+      setCurrentResult(null);
+      localStorage.removeItem('thanaweya_current_plan');
+    }
+  }, [currentResult, subjectTasks.length, setCurrentResult]);
+
   const handleOpenCertificate = (cert: DailyCertificateData) => {
     setSelectedCert(cert);
     setIsCertModalOpen(true);
@@ -74,7 +82,7 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
     }
   };
 
-  if (currentResult) {
+  if (currentResult && subjectTasks.length > 0) {
     return (
       <PageContainer title="جدول الجلسات">
         <div className="space-y-6">
@@ -107,7 +115,7 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
     );
   }
 
-  if (!currentResult && subjectTasks.length === 0) {
+  if (subjectTasks.length === 0) {
     return (
       <PageContainer title="جدول الجلسات">
         <div className="card-surface p-8 text-center space-y-6">
