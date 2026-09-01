@@ -110,11 +110,7 @@ export function generateLocalDiagnosis(input: StudentInput): DiagnosisResult {
       };
     });
   } else {
-    rawTasks = [
-      { subject: 'الفيزياء', chapter: 'الباب 1', lesson: 'الدرس 1', type: isExamNear ? 'practice' : 'study', mastery: 'weak' },
-      { subject: 'الكيمياء', chapter: 'الباب 2', lesson: 'الدرس 1', type: 'practice', mastery: 'medium' },
-      { subject: 'اللغة العربية', chapter: 'الباب 1', lesson: 'الدرس 1', type: 'review', mastery: 'strong' },
-    ];
+    rawTasks = [];
   }
 
   // Multiply frequency of WEAK tasks & reduce STRONG tasks in the pool
