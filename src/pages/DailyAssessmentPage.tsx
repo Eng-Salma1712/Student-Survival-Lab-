@@ -41,14 +41,6 @@ export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userId
   return (
     <PageContainer title="التقييم اليومي">
       <div className="space-y-6">
-        <DailyMotivationWidget userIdentity={userIdentity} />
-        
-        {allSessions.length > 0 && (
-          <AnalyzeMeWidget sessions={allSessions} goal={null} />
-        )}
-        
-        <SpiritualHabitsWidget />
-
         <div className="card-surface p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-4">
             <div>
@@ -139,6 +131,14 @@ export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userId
           </button>
         </div>
       </div>
+
+        <DailyMotivationWidget userIdentity={userIdentity} />
+        
+        {allSessions.length > 0 && (
+          <AnalyzeMeWidget sessions={allSessions} goal={null} />
+        )}
+        
+        <SpiritualHabitsWidget />
       </div>
     </PageContainer>
   );
