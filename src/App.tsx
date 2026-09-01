@@ -25,7 +25,6 @@ import {
   NEW_DAY_RESET_EVENT,
   recordDailyProgressActivity,
 } from './utils/dailyAchievementTracker';
-import { DEFAULT_THREE_SESSION_PLAN } from './data/defaultPlan';
 import {
   getStoredUserIdentity,
   saveUserIdentity,
@@ -40,9 +39,9 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed?.studyPlan?.length > 0) return parsed;
       }
-      return DEFAULT_THREE_SESSION_PLAN;
+      return null;
     } catch {
-      return DEFAULT_THREE_SESSION_PLAN;
+      return null;
     }
   });
 

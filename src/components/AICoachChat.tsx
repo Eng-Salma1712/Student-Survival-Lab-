@@ -113,11 +113,14 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
       // ignore
     }
 
+    const hasRealGoal = goal?.targetTitle || userIdentity?.collegeName;
+    const goalText = hasRealGoal ? `\n\n✨ هدفك بالوصول إلى (${collegeName}) يستحق كل سعي.` : '';
+
     return [
       {
         id: 'welcome-msg',
         role: 'model',
-        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **Student Survival AI** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.\n\n✨ هدفك بالوصول إلى (${collegeName}) يستحق كل سعي.\n\nكيف يمكنني مساعدتك الآن؟ 🚀`,
+        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **Student Survival AI** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀`,
         timestamp: Date.now(),
       },
     ];

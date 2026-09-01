@@ -36,15 +36,11 @@ const StudyPlanContext = createContext<StudyPlanContextType | undefined>(undefin
 export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isExhausted, setIsExhausted] = useState<ExhaustionLevel>('medium');
   const [availableHours, setAvailableHours] = useState<number>(4);
-  const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>('few_days');
-  const [examSubject, setExamSubject] = useState<string>('الكيمياء');
+  const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>('none');
+  const [examSubject, setExamSubject] = useState<string>('');
 
   const [subjectTasks, setSubjectTasks] = useState<SubjectTask[]>([]);
-  const [subjectMastery, setSubjectMastery] = useState<Record<string, MasteryLevel>>({
-    الفيزياء: 'weak',
-    الكيمياء: 'weak',
-    'اللغة العربية': 'strong',
-  });
+  const [subjectMastery, setSubjectMastery] = useState<Record<string, MasteryLevel>>({});
 
   const [peakTime, setPeakTime] = useState<PeakTime>('evening');
   const [learningPreference, setLearningPreference] = useState<LearningPreference>('practice');
@@ -104,7 +100,7 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
       upcomingExam,
       examSubject: upcomingExam !== 'none' ? examSubject : undefined,
       subjectTasks,
-      subjects: uniqueSubjects.length > 0 ? uniqueSubjects : ['الفيزياء', 'الكيمياء'],
+      subjects: uniqueSubjects,
       difficultSubjects,
       subjectMastery,
       peakTime,

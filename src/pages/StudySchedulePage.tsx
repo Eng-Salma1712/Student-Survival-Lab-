@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '../components/PageContainer';
 import { useStudyPlan } from '../context/StudyPlanContext';
 import { ResultsView } from '../components/ResultsView';
@@ -25,10 +26,11 @@ interface StudySchedulePageProps {
 }
 
 export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentResult, setCurrentResult, goal, userIdentity, onSessionCompleted }) => {
-  const { peakTime, setPeakTime, planPreference, setPlanPreference, additionalNotes, setAdditionalNotes, generateInputPayload } = useStudyPlan();
+  const { peakTime, setPeakTime, planPreference, setPlanPreference, additionalNotes, setAdditionalNotes, generateInputPayload, subjectTasks } = useStudyPlan();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCert, setSelectedCert] = useState<DailyCertificateData | null>(null);
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Automatic Trigger Check: pop up certificate automatically when all 4 conditions are met
   useEffect(() => {
@@ -100,6 +102,23 @@ export const StudySchedulePage: React.FC<StudySchedulePageProps> = ({ currentRes
             onClose={() => setIsCertModalOpen(false)}
             certificateData={selectedCert}
           />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  if (!currentResult && subjectTasks.length === 0) {
+    return (
+      <PageContainer title="جدول الجلسات">
+        <div className="card-surface p-8 text-center space-y-6">
+          <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Compass className="w-8 h-8 text-rose-500" />
+          </div>
+          <h2 className="text-xl font-bold text-[#2A2A2A]">لسه معملتش تقييم أو أضفت مواد</h2>
+          <p className="text-[#6B6B6B]">ابدئي من هنا عشان نضيف المواد ونقيم مستواكي قبل ما نعمل الجدول.</p>
+          <button onClick={() => navigate('/assessment')} className="btn-primary px-8 py-3 mx-auto">
+            ابدئي من هنا
+          </button>
         </div>
       </PageContainer>
     );
