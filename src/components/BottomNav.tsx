@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Calendar, BookOpen, Bot, Smile, Trophy, UserCircle } from 'lucide-react';
+import { Home, Calendar, BookOpen, Bot, Smile } from 'lucide-react';
 import { useLayoutMode } from '../context/LayoutModeContext';
 
 export const BottomNav: React.FC = () => {
@@ -15,8 +15,6 @@ export const BottomNav: React.FC = () => {
     { path: '/spiritual', icon: BookOpen, label: 'الجانب الديني' },
     { path: '/coach', icon: Bot, label: 'المستشار' },
     { path: '/assessment', icon: Smile, label: 'التقييم' },
-    { path: '/achievements', icon: Trophy, label: 'النقاط' },
-    { path: '/profile', icon: UserCircle, label: 'الملف الشخصي' },
   ];
 
   return (

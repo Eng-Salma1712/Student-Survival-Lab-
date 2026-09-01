@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Smile, BookOpen, Calendar, Target, Bot, Trophy, Flame, Star, Clock, Zap, Sparkles, UserCircle } from 'lucide-react';
+import { Smile, BookOpen, Calendar, Target, Bot, Flame, Star, Clock, Zap, Sparkles } from 'lucide-react';
 import { GamificationState, StudentGoal, DiagnosisResult, UserIdentity, DailyCertificateData } from '../types';
 import { GoalWidget } from '../components/GoalWidget';
 import { RescueModeModal } from '../components/RescueModeModal';
@@ -148,20 +148,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ gamification, goal, onSave
         >
           <Zap className="w-4 h-4" />
           <span className="text-sm font-bold">وضع الإنقاذ</span>
-        </button>
-        <button 
-          onClick={() => navigate('/profile')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-200/60 hover:bg-emerald-100 transition-colors shrink-0 snap-start cursor-pointer"
-        >
-          <UserCircle className="w-4 h-4" />
-          <span className="text-sm font-bold">الملف الشخصي</span>
-        </button>
-        <button 
-          onClick={() => navigate('/achievements')}
-          className="flex items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-200/50 hover:bg-rose-100 transition-colors shrink-0 snap-start cursor-pointer"
-        >
-          <Trophy className="w-4 h-4" />
-          <span className="text-sm font-bold">النقاط والمكافآت</span>
         </button>
       </div>
 
