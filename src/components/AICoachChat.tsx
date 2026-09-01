@@ -29,6 +29,10 @@ import {
 } from 'lucide-react';
 import { getTitleInfo } from './UserPersonalizationWidget';
 import { useToast } from '../context/ToastContext';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 export interface ChatMessage {
   id: string;
@@ -120,7 +124,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
       {
         id: 'welcome-msg',
         role: 'model',
-        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **Student Survival AI** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀`,
+        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **Student Survival AI** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀\n\n**تجربة دعم المعادلات الرياضية (LaTeX):**\nالتيار الكهربي: $$I = \\frac{Q}{t}$$\nحيث $I$ هو شدة التيار، $Q$ الشحنة، و $t$ الزمن.`,
         timestamp: Date.now(),
       },
     ];
@@ -400,7 +404,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
               </div>
 
               <div
-                className={`min-w-0 max-w-[calc(100%-2.25rem)] sm:max-w-[85%] px-3 py-2.5 sm:p-4 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed whitespace-pre-wrap break-words [word-break:break-word] overflow-x-auto ${
+                className={`min-w-0 max-w-[calc(100%-2.25rem)] sm:max-w-[85%] px-3 py-2.5 sm:p-4 rounded-2xl text-xs sm:text-sm font-medium leading-relaxed break-words [word-break:break-word] overflow-x-auto ${
                   isUser
                     ? 'bg-[#D15F70] text-white rounded-tl-none font-sans shadow-2xs'
                     : 'bg-white bg-[#F5F5F5] text-slate-800 text-[#2A2A2A] border border-slate-200 dark:border-[#E5E5E5] rounded-tr-none shadow-2xs'
@@ -426,7 +430,14 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
                 )}
 
                 {/* Message Body */}
-                <div>{cleanText || msg.text}</div>
+                <div dir="auto" className="prose-p:leading-relaxed prose-pre:bg-slate-800 prose-pre:text-slate-100 prose-pre:p-2 prose-pre:rounded-lg prose-pre:overflow-x-auto prose-a:text-pink-600 prose-a:underline">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {cleanText || msg.text}
+                  </ReactMarkdown>
+                </div>
                 <div
                   className={`text-[10px] mt-1.5 font-bold ${
                     isUser ? 'text-pink-100 text-left' : 'text-[#6B6B6B] text-right'

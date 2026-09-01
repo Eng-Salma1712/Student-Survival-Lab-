@@ -51,7 +51,7 @@ export const DailyCertificateModal: React.FC<DailyCertificateModalProps> = ({
     } catch (err) {
       console.error('Failed to export certificate image:', err);
       // Fallback notification
-      toast('تعذر تنزيل الصورة تلقائياً، يمكنك أخذ لقطة شاشة للشهادة', 'error');
+      toast('تعذر تنزيل الصورة تلقائياً، يمكنك أخذ لقطة شاشة للشهادة', 'warning');
     } finally {
       setIsDownloading(false);
     }

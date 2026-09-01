@@ -28,12 +28,7 @@ export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userId
       sessions = [...currentResult.studyPlan];
     } else if (history.length > 0) {
       // Pull sessions from the most recent history item if no active result
-      sessions = history[0].studyPlan?.map(sp => ({
-        id: sp.id,
-        subject: sp.subject,
-        durationMinutes: sp.durationMinutes,
-        completed: true // Assuming history means past completed, or we could just show the planned ones
-      })) || [];
+      sessions = history[0].studyPlan || [];
     }
     return sessions;
   }, [currentResult, history]);

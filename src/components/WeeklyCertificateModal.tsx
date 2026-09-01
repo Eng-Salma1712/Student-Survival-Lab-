@@ -32,7 +32,7 @@ export const WeeklyCertificateModal: React.FC<WeeklyCertificateModalProps> = ({ 
 ⏱️ ${certificateData.totalFocusedHours} ساعات تركيز
 ✅ ${certificateData.completedLessonsCount} دروس مكتملة
 
-أقرب لحلمي في ${goal?.targetCollege || 'الجامعة'}! 🚀
+أقرب لحلمي في ${goal?.targetTitle || 'الجامعة'}! 🚀
     `.trim();
     navigator.clipboard.writeText(text);
     setCopied(true);
