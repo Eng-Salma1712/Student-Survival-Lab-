@@ -328,24 +328,47 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
       }
 
       if (!response) {
-        throw new Error('No response from fetch');
+        throw new Error('NO_RESPONSE');
       }
 
       console.log('Chat API response status:', response.status);
 
+      // Read response body as raw text first to avoid uncaught JSON parse crashes
+      const rawText = await response.text();
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Chat API Error - Status:', response.status, 'Body:', errorText);
+        console.error('Chat API Error - Status:', response.status, 'Body:', rawText);
         
-        if (response.status === 503 || response.status === 429 || errorText.includes('503') || errorText.includes('UNAVAILABLE') || errorText.includes('high demand') || errorText.includes('quota')) {
+        if (response.status === 503 || response.status === 429 || rawText.includes('503') || rawText.includes('UNAVAILABLE') || rawText.includes('high demand') || rawText.includes('quota')) {
           throw new Error('503_ERROR');
         }
-        throw new Error(`Server status ${response.status}: ${errorText}`);
+
+        // Try extracting custom message from JSON response if present
+        try {
+          const parsedErr = JSON.parse(rawText);
+          if (parsedErr.message) {
+            throw new Error(`SERVER_MSG: ${parsedErr.message}`);
+          }
+        } catch (e: any) {
+          if (e.message?.startsWith('SERVER_MSG:') || e.message === '503_ERROR') {
+            throw e;
+          }
+        }
+
+        throw new Error(`SERVER_STATUS_${response.status}`);
       }
 
-      const data = await response.json();
-      if (data.reply) {
-        const botReplyText: string = data.reply;
+      // Safely parse JSON from the 200 OK response
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error('Failed to parse chat response as JSON. Raw body was:', rawText);
+        throw new Error('INVALID_JSON_RESPONSE');
+      }
+
+      if (data && typeof data.reply === 'string' && data.reply.trim().length > 0) {
+        const botReplyText: string = data.reply.trim();
         const botMessage: ChatMessage = {
           id: `bot-${Date.now()}`,
           role: 'model',
@@ -355,15 +378,23 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
 
         setMessages((prev) => [...prev, botMessage]);
       } else {
-        console.error('Chat API returned 200 but no reply field:', data);
-        throw new Error('No reply in response');
+        console.error('Chat API returned 200 but no valid reply field:', data);
+        throw new Error('EMPTY_REPLY');
       }
     } catch (err: any) {
       console.error('Backend API chat error:', err);
       
-      let errorMessage = `عذراً، يبدو أن هناك مشكلة مؤقتة في الاتصال. تفاصيل الخطأ: ${err.message || err}`;
+      let errorMessage = "عذراً، يبدو أن هناك تعثر مؤقت في استلام الرد. يرجى إعادة إرسال رسالتك، وسأكون معك فوراً! 🌟";
+      
       if (err.message === '503_ERROR') {
-        errorMessage = "الخادم مزدحم شوية دلوقتي، جرب تاني بعد لحظات 🙏";
+        errorMessage = "الخادم يواجه ضغطاً كبيراً حالياً، يرجى المحاولة مرة أخرى بعد ثوانٍ معدودة 🙏";
+      } else if (err.message === 'INVALID_JSON_RESPONSE' || err.message === 'EMPTY_REPLY') {
+        errorMessage = "حدث تعثر غير متوقع أثناء معالجة الرد من الذكاء الاصطناعي. جرب إرسال الرسالة مرة أخرى وسيجيبك المساعد فوراً!";
+      } else if (err.message?.startsWith('SERVER_MSG:')) {
+        const customMsg = err.message.replace('SERVER_MSG:', '').trim();
+        if (customMsg && !customMsg.includes('JSON') && !customMsg.includes('<') && !customMsg.includes('{')) {
+          errorMessage = customMsg;
+        }
       }
       
       const botMessage: ChatMessage = {

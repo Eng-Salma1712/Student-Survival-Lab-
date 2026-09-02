@@ -125,6 +125,21 @@ export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userId
               </button>
             ))}
           </div>
+
+          {upcomingExam !== 'none' && (
+            <div className="pt-2">
+              <label className="block text-xs font-semibold text-[#6B6B6B] mb-1.5">
+                ما هي مادة الامتحان القريب؟
+              </label>
+              <input
+                type="text"
+                value={examSubject || ''}
+                onChange={(e) => setExamSubject(e.target.value)}
+                placeholder="مثال: فيزياء، كيمياء، أحياء، تاريخ..."
+                className="w-full px-4 py-2.5 bg-[#F5F5F5] border border-[#E5E5E5] rounded-xl text-xs sm:text-sm text-[#2A2A2A] focus:border-[#D15F70] outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* 4. مواعيدك الثابتة والروتين اليومي */}

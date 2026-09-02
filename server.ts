@@ -31,6 +31,37 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
+// Resilient Gemini model caller with automatic fallback across recommended flash models
+async function generateWithModelFallback(ai: GoogleGenAI, requestParams: any) {
+  const modelsToTry = [
+    requestParams.model || 'gemini-3.8-flash',
+    'gemini-3.6-flash',
+    'gemini-flash-latest',
+  ];
+  const uniqueModels = Array.from(new Set(modelsToTry));
+
+  let lastError: any = null;
+  for (let i = 0; i < uniqueModels.length; i++) {
+    const currentModel = uniqueModels[i];
+    try {
+      const response = await ai.models.generateContent({
+        ...requestParams,
+        model: currentModel,
+      });
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      const isLast = i === uniqueModels.length - 1;
+      if (!isLast) {
+        const nextModel = uniqueModels[i + 1];
+        console.log(`[Gemini] Model ${currentModel} returned: ${err?.message || 'issue'}. Seamlessly switching to ${nextModel}...`);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // System Prompt for AI Engine as specified in user guidelines
 const SYSTEM_PROMPT = `
 You are an expert Educational Psychologist and AI Adaptive Study Coach for Egyptian school and high school students (covering both المرحلة الإعدادية and المرحلة الثانوية - علمي وأدبي).
@@ -97,7 +128,7 @@ Output Structure (ALL TEXT IN ARABIC):
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', model: 'gemini-3.7-flash' });
+  res.json({ status: 'ok', model: 'gemini-3.8-flash' });
 });
 
 // Cache for prayer times: key: `${city}_${dateStr}`
@@ -253,8 +284,10 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
       };
     });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+    res.setHeader('Content-Type', 'application/json');
+
+    const response = await generateWithModelFallback(ai, {
+      model: 'gemini-3.8-flash',
       contents: formattedContents,
       config: {
         systemInstruction: coachSystemInstruction,
@@ -262,13 +295,14 @@ Output Formatting: Keep responses well-structured, scannable, using clear bullet
       },
     });
 
-    if (!response.text) {
+    if (!response || !response.text) {
       throw new Error('Empty response from Gemini Coach.');
     }
 
-    res.json({ reply: response.text.trim() });
+    res.status(200).json({ reply: response.text.trim() });
   } catch (err: any) {
     console.error('Error in /api/chat:', err);
+    res.setHeader('Content-Type', 'application/json');
     const errorMessage = err?.message || 'Coach is currently taking a short breath.';
     if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand') || errorMessage.includes('429') || errorMessage.includes('quota')) {
       res.status(503).json({ error: 'CHAT_FAILED', message: errorMessage });
@@ -367,8 +401,10 @@ Student Data Input:
 - Additional Notes: ${input.additionalNotes || 'None'}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+    res.setHeader('Content-Type', 'application/json');
+
+    const response = await generateWithModelFallback(ai, {
+      model: 'gemini-3.8-flash',
       contents: promptText,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -400,6 +436,7 @@ Student Data Input:
                   id: { type: Type.STRING },
                   title: { type: Type.STRING },
                   subject: { type: Type.STRING },
+                  startTime: { type: Type.STRING },
                   durationMinutes: { type: Type.INTEGER },
                   breakMinutes: { type: Type.INTEGER },
                   focusType: { type: Type.STRING },
@@ -441,11 +478,24 @@ Student Data Input:
       },
     });
 
-    if (!response.text) {
+    if (!response || !response.text) {
       throw new Error('Empty text response received from Gemini.');
     }
 
-    const resultData = JSON.parse(response.text.trim());
+    let rawJson = response.text.trim();
+    if (rawJson.startsWith('```json')) {
+      rawJson = rawJson.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (rawJson.startsWith('```')) {
+      rawJson = rawJson.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
+    let resultData: any;
+    try {
+      resultData = JSON.parse(rawJson);
+    } catch (parseErr: any) {
+      console.error('Failed to parse Gemini output as JSON:', rawJson, parseErr);
+      throw new Error('Failed to parse study plan JSON structure from AI.');
+    }
 
     // Enforce strict pomodoro session durations if strict planPreference is requested
     if (input.planPreference === 'strict' && Array.isArray(resultData.studyPlan)) {
@@ -467,11 +517,29 @@ Student Data Input:
       inputsSummary: input,
     };
 
-    res.json(fullResult);
+    res.status(200).json(fullResult);
   } catch (err: any) {
     console.error('Error in /api/generate-plan:', err);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ error: 'AI_GENERATION_FAILED', message: err?.message || 'Failed to generate plan.' });
   }
+});
+
+// Catch-all 404 handler for unmatched /api/* routes to prevent HTML falling through
+app.all('/api/*', (req, res) => {
+  res.status(404).json({
+    error: 'NOT_FOUND',
+    message: `API endpoint ${req.method} ${req.url} does not exist.`,
+  });
+});
+
+// Express global error handler to guarantee all server errors return JSON, never HTML
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[Express Global Error Handler]:', err);
+  res.status(err.status || 500).json({
+    error: 'SERVER_ERROR',
+    message: err.message || 'An unexpected internal server error occurred.',
+  });
 });
 
 async function startServer() {
