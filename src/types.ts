@@ -46,6 +46,7 @@ export interface StudentInput {
   studentGrade?: string;
   targetGoal?: string;
   dailyCommitments?: string;
+  planIntensity?: 'balanced' | 'deep' | 'rescue';
 }
 
 export interface StudySession {

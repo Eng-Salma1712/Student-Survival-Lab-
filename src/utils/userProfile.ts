@@ -107,6 +107,7 @@ export const getStoredUserIdentity = (): UserIdentity | null => {
             track: parsed.track || 'scientific',
             grade: parsed.grade || 'sec_3',
             gradeLabel: parsed.gradeLabel || 'الصف الثالث الثانوي',
+            dailyCommitments: parsed.dailyCommitments || '',
           };
         }
       }

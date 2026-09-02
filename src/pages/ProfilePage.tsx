@@ -15,7 +15,6 @@ import {
   Monitor,
   Smartphone,
   MonitorSmartphone,
-  Clock,
   Settings,
   Target,
   Edit3,
@@ -63,25 +62,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     goal?.percentageGoal || '95%+'
   );
   
-  const [dailyCommitments, setDailyCommitments] = useState<string>(
-    userIdentity?.dailyCommitments || ''
-  );
-  const [isEditingCommitments, setIsEditingCommitments] = useState<boolean>(!userIdentity?.dailyCommitments);
-
-  const handleSaveCommitments = () => {
-    if (userIdentity) {
-      const updatedIdentity = {
-        ...userIdentity,
-        dailyCommitments
-      };
-      // saveUserIdentity is imported from utils/userProfile, let's just make sure it's available.
-      // Wait, is saveUserIdentity imported in this file?
-      onSaveIdentity(updatedIdentity);
-      setIsEditingCommitments(false);
-      toast('تم حفظ الالتزامات اليومية بنجاح 🕒', 'success');
-    }
-  };
-
   const [targetExamDate, setTargetExamDate] = useState<string>(
     goal?.targetExamDate || ''
   );
@@ -98,15 +78,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
       return (saved as any) || 'morning';
     } catch {
       return 'morning';
-    }
-  });
-
-  const [planIntensity, setPlanIntensity] = useState<'balanced' | 'deep' | 'rescue'>(() => {
-    try {
-      const saved = localStorage.getItem('thanaweya_plan_intensity');
-      return (saved as any) || 'balanced';
-    } catch {
-      return 'balanced';
     }
   });
 
@@ -175,12 +146,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
     setStudyRhythm(rhythm);
     localStorage.setItem('thanaweya_study_rhythm', rhythm);
     toast('تم حفظ تفضيل وقت المذاكرة ✨', 'info');
-  };
-
-  const handleSaveIntensity = (intensity: 'balanced' | 'deep' | 'rescue') => {
-    setPlanIntensity(intensity);
-    localStorage.setItem('thanaweya_plan_intensity', intensity);
-    toast('تم حفظ نمط الخطة المفضل ⚡', 'info');
   };
 
   // Select college presets list according to user stage and track
@@ -432,69 +397,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
 
 
-        {/* Section 3: Daily Commitments */}
-        <div className="card-surface p-5 sm:p-6 border border-[#E5E5E5] space-y-5" dir="rtl">
-          <div className="flex items-center gap-2.5 border-b border-[#E5E5E5] pb-3.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 font-bold">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-[#2A2A2A] font-heading">
-                3. مواعيدك الثابتة والروتين اليومي
-              </h3>
-              <p className="text-xs text-[#6B6B6B]">
-                أوقات النوم، الوجبات، الدروس، أو أي التزامات يومية عشان الجدول يبعد عنها
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {isEditingCommitments ? (
-              <div className="space-y-4 animate-fade-in">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-[#2A2A2A]">
-                    اكتب مواعيدك الثابتة (أوقات النوم، الدروس، الجيم، الوجبات، إلخ):
-                  </label>
-                  <textarea
-                    value={dailyCommitments}
-                    onChange={(e) => setDailyCommitments(e.target.value)}
-                    placeholder="مثال:&#10;أنام من ١٢ بالليل وأصحى ٧ الصبح.&#10;فطار الساعة ٨، غداء الساعة ٣، عشاء الساعة ٩.&#10;عندي درس من ٤ لـ ٦ يومين في الأسبوع."
-                    className="input-primary min-h-[120px] resize-y text-sm leading-relaxed w-full"
-                    dir="rtl"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSaveCommitments}
-                  className="btn-primary w-full py-3.5 flex items-center justify-center gap-2"
-                >
-                  <Check className="w-5 h-5" />
-                  حفظ المواعيد
-                </button>
-              </div>
-            ) : (
-              <div className="p-4 sm:p-5 rounded-2xl border border-[#E8F2E9] bg-gradient-to-br from-white to-[#FAFDFB] relative group">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingCommitments(true)}
-                  className="absolute top-4 left-4 p-2 rounded-xl text-[#6B6B6B] hover:text-[#426B4B] hover:bg-[#E8F2E9] transition-all cursor-pointer bg-white border border-[#E5E5E5] shadow-sm z-10"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#7A5B64] block mb-2">مواعيدك الثابتة المحفوظة:</span>
-                  {dailyCommitments ? (
-                    <p className="text-sm font-bold text-[#2A2A2A] whitespace-pre-wrap leading-relaxed">{dailyCommitments}</p>
-                  ) : (
-                    <p className="text-sm text-[#6B6B6B]">لم يتم تحديد مواعيد ثابتة.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 4. Personal Settings & Preferences */}
+        {/* 3. Personal Settings & Preferences */}
         <div className="card-surface p-5 sm:p-6 border border-[#E5E5E5] space-y-5" dir="rtl">
           <div className="flex items-center gap-2.5 border-b border-[#E5E5E5] pb-3.5">
             <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 font-bold">
@@ -502,7 +405,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-[#2A2A2A] font-heading">
-                4. التفضيلات الشخصية وإعدادات التطبيق
+                3. التفضيلات الشخصية وإعدادات التطبيق
               </h3>
               <p className="text-xs text-[#6B6B6B]">
                 خصص تنبيهاتك، وضع العرض، وأوقات المذاكرة المفضلة لديك
@@ -600,34 +503,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     onClick={() => handleSaveRhythm(item.id as any)}
                     className={`p-2.5 rounded-xl text-right border transition-all cursor-pointer ${
                       studyRhythm === item.id
-                        ? 'bg-[#D15F70]/15 border-[#D15F70] text-[#2A2A2A] font-extrabold shadow-2xs ring-1 ring-[#D15F70]'
-                        : 'bg-white border-[#E5E5E5] text-[#6B6B6B] hover:bg-slate-50'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block">{item.label}</span>
-                    <span className="text-[10px] text-[#6B6B6B] block mt-0.5">{item.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Study Plan Intensity */}
-            <div className="p-3.5 rounded-xl border border-[#E5E5E5] bg-[#FAFAFA] space-y-2">
-              <label className="block text-xs font-extrabold text-[#2A2A2A] mb-1">
-                أسلوب الخطة المفضل في المحرك التكيفي:
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'balanced', label: 'متوازن ⚖️', desc: 'جلسات 45 دقيقة مع استراحات' },
-                  { id: 'deep', label: 'مكثف 🚀', desc: 'جلسات 60 دقيقة وتركيز عميق' },
-                  { id: 'rescue', label: 'إنقاذ ⚡', desc: 'تركيز على 20% الأكثر أهمية' },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSaveIntensity(item.id as any)}
-                    className={`p-2.5 rounded-xl text-right border transition-all cursor-pointer ${
-                      planIntensity === item.id
                         ? 'bg-[#D15F70]/15 border-[#D15F70] text-[#2A2A2A] font-extrabold shadow-2xs ring-1 ring-[#D15F70]'
                         : 'bg-white border-[#E5E5E5] text-[#6B6B6B] hover:bg-slate-50'
                     }`}

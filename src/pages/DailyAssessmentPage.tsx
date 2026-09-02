@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '../components/PageContainer';
 import { useStudyPlan } from '../context/StudyPlanContext';
-import { Brain } from 'lucide-react';
+import { Brain, Clock, Zap } from 'lucide-react';
 import { ExhaustionLevel, ExamTimeline, UserIdentity, DiagnosisResult, StudySession } from '../types';
 import { SpiritualHabitsWidget } from '../components/SpiritualHabitsWidget';
 import { DailyMotivationWidget } from '../components/DailyMotivationWidget';
@@ -15,7 +15,14 @@ interface DailyAssessmentPageProps {
 }
 
 export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userIdentity, history, currentResult }) => {
-  const { isExhausted, setIsExhausted, availableHours, setAvailableHours, upcomingExam, setUpcomingExam, examSubject, setExamSubject } = useStudyPlan();
+  const { 
+    isExhausted, setIsExhausted, 
+    availableHours, setAvailableHours, 
+    upcomingExam, setUpcomingExam, 
+    examSubject, setExamSubject,
+    dailyCommitments, setDailyCommitments,
+    planIntensity, setPlanIntensity
+  } = useStudyPlan();
   const navigate = useNavigate();
 
   const handleNext = () => {
@@ -115,6 +122,68 @@ export const DailyAssessmentPage: React.FC<DailyAssessmentPageProps> = ({ userId
                 }`}
               >
                 {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. مواعيدك الثابتة والروتين اليومي */}
+        <div className="space-y-3 pt-5 border-t border-[#E5E5E5]">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 font-bold shrink-0 mt-0.5">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2A2A2A] font-heading">
+                4. مواعيدك الثابتة والروتين اليومي
+              </h3>
+              <p className="text-xs text-[#6B6B6B] mt-0.5">
+                أوقات النوم، الوجبات، الدروس، أو أي التزامات ثابتة ليتجنب المحرك التكيفي وضع جلسات مذاكرة فيها
+              </p>
+            </div>
+          </div>
+          <textarea
+            value={dailyCommitments}
+            onChange={(e) => setDailyCommitments(e.target.value)}
+            placeholder="مثال:&#10;• أنام من ١٢ بالليل وأصحى ٧ الصبح.&#10;• وجبات: فطار ٨:٠٠، غداء ٣:٠٠، عشاء ٩:٠٠.&#10;• درس فيزياء من ٤:٠٠ لـ ٦:٠٠ مساءً."
+            className="w-full px-4 py-3 bg-[#F5F5F5] border border-[#E5E5E5] rounded-xl text-xs sm:text-sm text-[#2A2A2A] focus:border-[#D15F70] outline-none min-h-[105px] resize-y leading-relaxed font-sans"
+            dir="rtl"
+          />
+        </div>
+
+        {/* 5. أسلوب الخطة المفضل في المحرك التكيفي */}
+        <div className="space-y-3 pt-5 border-t border-[#E5E5E5]">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 font-bold shrink-0 mt-0.5">
+              <Zap className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#2A2A2A] font-heading">
+                5. أسلوب خطتك المفضل في المحرك التكيفي
+              </h3>
+              <p className="text-xs text-[#6B6B6B] mt-0.5">
+                اختر أسلوب وكثافة الجلسات الدراسية الأنسب ليومك
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { id: 'balanced', label: 'متوازن ⚖️', desc: 'جلسات 45 دقيقة مع استراحات مريحة' },
+              { id: 'deep', label: 'مكثف 🚀', desc: 'جلسات 60 دقيقة وتركيز عميق' },
+              { id: 'rescue', label: 'إنقاذ ⚡', desc: 'تركيز على 20% الأكثر أهمية (قاعدة باريتو)' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setPlanIntensity(item.id as 'balanced' | 'deep' | 'rescue')}
+                className={`p-3.5 rounded-xl text-right border transition-all cursor-pointer ${
+                  planIntensity === item.id
+                    ? 'border-[#D15F70] bg-[#D15F70]/15 text-[#2A2A2A] ring-1 ring-[#D15F70]'
+                    : 'border-[#E5E5E5] bg-[#F5F5F5] text-[#6B6B6B] hover:bg-[#E5E5E5]'
+                }`}
+              >
+                <div className="text-xs font-bold mb-1 text-[#2A2A2A]">{item.label}</div>
+                <div className="text-[11px] opacity-75 leading-relaxed">{item.desc}</div>
               </button>
             ))}
           </div>

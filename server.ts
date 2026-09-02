@@ -361,7 +361,9 @@ Student Data Input:
 - Difficult Subjects: ${input.difficultSubjects.join(', ')}
 - Peak Productivity Time: ${input.peakTime}
 - Learning Preference: ${input.learningPreference}
-- Plan Preference: ${input.planPreference}
+- Plan Preference: ${input.planPreference} (${input.planPreference === 'strict' ? 'بومودورو ثابتة: جلسات 25 أو 50 دقيقة حصراً' : 'مرنة: جلسات 45-90 دقيقة'})
+- Daily Commitments & Fixed Routine: ${input.dailyCommitments || 'لا توجد التزامات محددة'}
+- Preferred Plan Style (Intensity): ${input.planIntensity || 'balanced'} (${input.planIntensity === 'deep' ? 'مكثف 60 دقيقة وتركيز عميق' : input.planIntensity === 'rescue' ? 'إنقاذ وتركيز على 20% الأكثر أهمية (قاعدة باريتو)' : 'متوازن 45 دقيقة مع استراحات'})
 - Additional Notes: ${input.additionalNotes || 'None'}
 `;
 
@@ -444,6 +446,18 @@ Student Data Input:
     }
 
     const resultData = JSON.parse(response.text.trim());
+
+    // Enforce strict pomodoro session durations if strict planPreference is requested
+    if (input.planPreference === 'strict' && Array.isArray(resultData.studyPlan)) {
+      resultData.studyPlan = resultData.studyPlan.map((s: any) => {
+        const d = s.durationMinutes <= 35 ? 25 : 50;
+        return {
+          ...s,
+          durationMinutes: d,
+          breakMinutes: d === 25 ? 5 : 10,
+        };
+      });
+    }
 
     // Wrap with metadata ID & timestamps
     const fullResult = {

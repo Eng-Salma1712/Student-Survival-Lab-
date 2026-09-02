@@ -163,31 +163,47 @@ export function generateLocalDiagnosis(input: StudentInput): DiagnosisResult {
     }
     lastSubject = candidateTask.subject;
 
-    // Determine Duration based on Mastery & Activity Type
-    let duration = 60;
-    if (candidateTask.mastery === 'weak') {
-      duration = candidateTask.type === 'study' ? 85 : 75; // Weak gets longer, deep focus time
-    } else if (candidateTask.mastery === 'medium') {
-      duration = candidateTask.type === 'study' ? 60 : 50;
+    // Determine Duration based on Plan Preference & Plan Intensity & Mastery
+    let duration = 50;
+    if (planPreference === 'strict') {
+      // Pomodoro fixed sessions: strictly 25 or 50 min
+      if (candidateTask.mastery === 'weak' || candidateTask.type === 'study') {
+        duration = 50;
+      } else {
+        duration = 25;
+      }
     } else {
-      duration = 35; // Strong gets shorter, fast-paced review
+      // Flexible plan adapted by Plan Intensity & Mastery
+      const intensity = input.planIntensity || 'balanced';
+      if (intensity === 'rescue') {
+        duration = candidateTask.mastery === 'weak' ? 45 : 30;
+      } else if (intensity === 'deep') {
+        duration = candidateTask.mastery === 'weak' ? 70 : 60;
+      } else {
+        // balanced
+        duration = candidateTask.mastery === 'weak' ? 55 : 45;
+      }
     }
 
     if (isExhausted === 'yes') {
-      duration = Math.min(duration, 45); // Max 45 min if exhausted
+      duration = planPreference === 'strict' ? 25 : Math.min(duration, 40); // Max 25-40 min if exhausted
     }
 
     if (duration > remainingMinutes) {
-      duration = remainingMinutes;
+      duration = remainingMinutes >= 25 ? remainingMinutes : 25;
     }
 
     remainingMinutes -= duration;
 
-    // Break time based on session length
-    let breakTime = 15;
-    if (duration <= 40) breakTime = 5;
-    else if (duration <= 60) breakTime = 10;
-    else breakTime = 15;
+    // Break time based on session length and preference
+    let breakTime = 10;
+    if (planPreference === 'strict') {
+      breakTime = duration <= 30 ? 5 : 10;
+    } else {
+      if (duration <= 40) breakTime = 5;
+      else if (duration <= 60) breakTime = 10;
+      else breakTime = 15;
+    }
 
     if (remainingMinutes < breakTime) {
       breakTime = 0;
@@ -268,6 +284,17 @@ export function generateLocalDiagnosis(input: StudentInput): DiagnosisResult {
   }
   if (isExamNear) {
     adaptiveInsights.push(`🎯 **تأقلم قبل الامتحان**: تم تحويل تركيز الجدول كاملاً نحو حل الأسئلة الشاملة والتدريبات المباشرة.`);
+  }
+  if (planPreference === 'strict') {
+    adaptiveInsights.push(`🍅 **نظام بومودورو الثابت**: تم توزيع المهام في جلسات تركيز محددة (25 أو 50 دقيقة) مع فترات راحة منتظمة لشحن التركيز.`);
+  }
+  if (input.planIntensity === 'rescue') {
+    adaptiveInsights.push(`⚡ **نمط الإنقاذ السريع (قاعدة 80/20)**: تركيز فوري على الأفكار الأكثر وزناً في الامتحانات لتعويض الوقت.`);
+  } else if (input.planIntensity === 'deep') {
+    adaptiveInsights.push(`🚀 **نمط التركيز العميق**: جلسات أطول للموضوعات الدسمة مع استيعاب شامل ومكثف.`);
+  }
+  if (input.dailyCommitments) {
+    adaptiveInsights.push(`🕒 **مراعاة روتينك اليومي**: تم الأخذ بعين الاعتبار أوقات نومك والتزاماتك الثابتة المحددة.`);
   }
   adaptiveInsights.push(`🔄 **الجدولة التكيفية المتنوعة (Interleaving)**: تناوب المواد يمنع التكرار الرتيب يومياً ويحفز الذاكرة الأطول مدى.`);
 

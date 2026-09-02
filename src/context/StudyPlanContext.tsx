@@ -13,6 +13,11 @@ interface StudyPlanContextType {
   setUpcomingExam: (val: ExamTimeline) => void;
   examSubject: string;
   setExamSubject: (val: string) => void;
+
+  dailyCommitments: string;
+  setDailyCommitments: (val: string) => void;
+  planIntensity: 'balanced' | 'deep' | 'rescue';
+  setPlanIntensity: (val: 'balanced' | 'deep' | 'rescue') => void;
   
   subjectTasks: SubjectTask[];
   setSubjectTasks: (val: SubjectTask[]) => void;
@@ -38,6 +43,54 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [availableHours, setAvailableHours] = useState<number>(() => Number(localStorage.getItem('thanaweya_available_hours')) || 4);
   const [upcomingExam, setUpcomingExam] = useState<ExamTimeline>(() => (localStorage.getItem('thanaweya_upcoming_exam') as ExamTimeline) || 'none');
   const [examSubject, setExamSubject] = useState<string>(() => localStorage.getItem('thanaweya_exam_subject') || '');
+
+  const [dailyCommitments, setDailyCommitmentsState] = useState<string>(() => {
+    try {
+      const direct = localStorage.getItem('thanaweya_daily_commitments');
+      if (direct !== null) return direct;
+      const savedId = localStorage.getItem('thanaweya_user_identity');
+      if (savedId) {
+        const parsed = JSON.parse(savedId);
+        if (parsed.dailyCommitments) return parsed.dailyCommitments;
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  });
+
+  const setDailyCommitments = (val: string) => {
+    setDailyCommitmentsState(val);
+    try {
+      localStorage.setItem('thanaweya_daily_commitments', val);
+      const savedId = localStorage.getItem('thanaweya_user_identity');
+      if (savedId) {
+        const parsed = JSON.parse(savedId);
+        parsed.dailyCommitments = val;
+        localStorage.setItem('thanaweya_user_identity', JSON.stringify(parsed));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const [planIntensity, setPlanIntensityState] = useState<'balanced' | 'deep' | 'rescue'>(() => {
+    try {
+      const saved = localStorage.getItem('thanaweya_plan_intensity');
+      return (saved as any) || 'balanced';
+    } catch {
+      return 'balanced';
+    }
+  });
+
+  const setPlanIntensity = (val: 'balanced' | 'deep' | 'rescue') => {
+    setPlanIntensityState(val);
+    try {
+      localStorage.setItem('thanaweya_plan_intensity', val);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const [subjectTasks, setSubjectTasks] = useState<SubjectTask[]>(() => {
     try {
@@ -90,7 +143,6 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
     let studentGrade = 'sec_3';
     let studentGradeLabel = 'الصف الثالث الثانوي';
     let targetGoal = 'كلية الأحلام';
-    let dailyCommitments = '';
 
     try {
       const savedId = localStorage.getItem('thanaweya_user_identity');
@@ -101,7 +153,6 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (parsed.grade) studentGrade = parsed.grade;
         if (parsed.gradeLabel) studentGradeLabel = parsed.gradeLabel;
         if (parsed.collegeName) targetGoal = parsed.collegeName;
-        if (parsed.dailyCommitments) dailyCommitments = parsed.dailyCommitments;
       }
       const savedGoal =
         localStorage.getItem('thanaweya_student_goal') ||
@@ -134,7 +185,8 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
       studentTrack,
       studentGrade: studentGradeLabel || studentGrade,
       targetGoal,
-      dailyCommitments,
+      dailyCommitments: dailyCommitments.trim() ? dailyCommitments.trim() : undefined,
+      planIntensity,
     };
   };
 
@@ -144,6 +196,8 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
       availableHours, setAvailableHours,
       upcomingExam, setUpcomingExam,
       examSubject, setExamSubject,
+      dailyCommitments, setDailyCommitments,
+      planIntensity, setPlanIntensity,
       subjectTasks, setSubjectTasks,
       subjectMastery, setSubjectMastery,
       peakTime, setPeakTime,
