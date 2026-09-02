@@ -122,7 +122,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
       {
         id: `welcome-${Date.now()}`,
         role: 'model',
-        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **الرفيق** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀\n\n**تجربة دعم المعادلات الرياضية (LaTeX):**\nالتيار الكهربي: $$I = \\frac{Q}{t}$$\nحيث $I$ هو شدة التيار، $Q$ الشحنة، و $t$ الزمن.\n\nتجربة الكيمياء:\n$$8H_2SO_4_{(conc)} \\xrightarrow{\\Delta} FeSO_4 + Fe_2(SO_4)_3 + 4SO_2\\uparrow + 8H_2O$$`,
+        text: `أهلاً بك يا ${titleInfo.formalTitle}! أنا **الرفيق** 🎓🤖\n\nأنا مساعدك الأكاديمي والروحي الموثوق لتحقيق التفوق.\n\nيمكنك سؤالي عن أي موضوع دراسي (رياضيات، برمجة، علوم، إلخ)، طلب شرح لمفهوم معين، المساعدة في الواجبات، أو حتى طلب نصيحة حول تنظيم وقتك.${goalText}\n\nكيف يمكنني مساعدتك الآن؟ 🚀`,
         timestamp: Date.now(),
       }
     ];
@@ -279,32 +279,55 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
 
     try {
       console.log('Sending chat request to /api/chat...');
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages.map((m) => ({
-            role: m.role,
-            text: m.text,
-            attachments: m.attachments,
-          })),
-          studentContext: {
-            name: studentName,
-            gender: userIdentity?.gender || 'female',
-            stage: userIdentity?.stage || 'secondary',
-            track: userIdentity?.track,
-            grade: userIdentity?.grade,
-            gradeLabel: userIdentity?.gradeLabel,
-            goalTitle: goal?.targetTitle,
-            collegeName: collegeName,
-            currentMode: selectedMode,
-          },
-        }),
-      });
+      
+      let response;
+      let retries = 2; // Maximum 2 retries (3 attempts total)
+      
+      while (retries >= 0) {
+        response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: newMessages.map((m) => ({
+              role: m.role,
+              text: m.text,
+              attachments: m.attachments,
+            })),
+            studentContext: {
+              name: studentName,
+              gender: userIdentity?.gender || 'female',
+              stage: userIdentity?.stage || 'secondary',
+              track: userIdentity?.track,
+              grade: userIdentity?.grade,
+              gradeLabel: userIdentity?.gradeLabel,
+              goalTitle: goal?.targetTitle,
+              collegeName: collegeName,
+              currentMode: selectedMode,
+            },
+          }),
+        });
+        
+        if (response.status === 503 && retries > 0) {
+          console.log(`Received 503, retrying in 2 seconds... (${retries} retries left)`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          retries--;
+          continue;
+        }
+        
+        break;
+      }
+
+      // Check if response is defined (it should be, but TS might complain if not initialized)
+      if (!response) {
+        throw new Error('No response from fetch');
+      }
 
       console.log('Chat API response status:', response.status);
 
       if (!response.ok) {
+        if (response.status === 503) {
+          throw new Error('503_ERROR');
+        }
         const errorText = await response.text();
         console.error('Chat API Error - Status:', response.status, 'Body:', errorText);
         throw new Error(`Server status ${response.status}: ${errorText}`);
@@ -327,10 +350,16 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
       }
     } catch (err: any) {
       console.error('Backend API chat error:', err);
+      
+      let errorMessage = `عذراً، يبدو أن هناك مشكلة مؤقتة في الاتصال. تفاصيل الخطأ: ${err.message || err}`;
+      if (err.message === '503_ERROR') {
+        errorMessage = "الخادم مزدحم شوية دلوقتي، جرب تاني بعد لحظات 🙏";
+      }
+      
       const botMessage: ChatMessage = {
         id: `bot-${Date.now()}`,
         role: 'model',
-        text: `عذراً، يبدو أن هناك مشكلة مؤقتة في الاتصال. تفاصيل الخطأ: ${err.message || err}`,
+        text: errorMessage,
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, botMessage]);
