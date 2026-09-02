@@ -45,6 +45,7 @@ export interface StudentInput {
   studentTrack?: SecondaryTrack;
   studentGrade?: string;
   targetGoal?: string;
+  dailyCommitments?: string;
 }
 
 export interface StudySession {
@@ -54,6 +55,7 @@ export interface StudySession {
   chapter?: string;
   lesson?: string;
   activityType?: ActivityType;
+  startTime?: string; // Optional absolute start time in HH:MM format (24h) provided by AI to avoid commitments
   durationMinutes: number; // Flexible duration 45 to 90 min based on task & state
   breakMinutes: number;
   focusType: string; // e.g. "شرح الباب 1 الدرس 2", "حل أسئلة امتحانات ثانوية عامة", "مراجعة وتثبيت"
@@ -137,6 +139,7 @@ export interface UserIdentity {
   track?: SecondaryTrack;
   grade?: GradeYear | string;
   gradeLabel?: string;
+  dailyCommitments?: string;
 }
 
 export interface GamificationState {

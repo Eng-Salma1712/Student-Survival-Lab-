@@ -72,7 +72,12 @@ export function calculateTimedSessions(
         : 15;
 
     // 1. Current session start
-    const sessionStartMinutes = currentTotalMinutes;
+    let sessionStartMinutes = currentTotalMinutes;
+    if (session.startTime) {
+      sessionStartMinutes = parseTimeToMinutes(session.startTime);
+      // If the AI schedules a session before the current running time, we assume it's for the next day,
+      // but let's just stick to the AI's provided time to avoid messing up their strict schedule.
+    }
     const startTimeStr = minutesToTimeStr(sessionStartMinutes);
 
     // 2. Current session end

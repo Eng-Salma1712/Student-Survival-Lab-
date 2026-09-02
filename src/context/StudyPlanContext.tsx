@@ -90,6 +90,7 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
     let studentGrade = 'sec_3';
     let studentGradeLabel = 'الصف الثالث الثانوي';
     let targetGoal = 'كلية الأحلام';
+    let dailyCommitments = '';
 
     try {
       const savedId = localStorage.getItem('thanaweya_user_identity');
@@ -100,6 +101,7 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
         if (parsed.grade) studentGrade = parsed.grade;
         if (parsed.gradeLabel) studentGradeLabel = parsed.gradeLabel;
         if (parsed.collegeName) targetGoal = parsed.collegeName;
+        if (parsed.dailyCommitments) dailyCommitments = parsed.dailyCommitments;
       }
       const savedGoal =
         localStorage.getItem('thanaweya_student_goal') ||
@@ -132,6 +134,7 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
       studentTrack,
       studentGrade: studentGradeLabel || studentGrade,
       targetGoal,
+      dailyCommitments,
     };
   };
 

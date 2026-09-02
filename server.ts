@@ -63,11 +63,15 @@ ADAPTIVE ENGINE RULES:
    - If there aren't enough easier subjects to interleave, insert a longer break between two difficult sessions, and strictly vary the session types (e.g. do not put two "شرح جديد" sessions for difficult subjects consecutively; alternate with "حل تدريبات").
    - Prioritize placing the absolute hardest subject during the student's stated peak productivity time (morning/evening/night), and space out any other difficult sessions rather than clustering them.
 5. Provide adaptiveTags for sessions (e.g., "🔴 مادة ضعيفة: تكثيف الشرح والحل" | "🟢 مادة قوية: مراجعة خاطفة" | "🎯 تركيز امتحان: حل تدريبات").
-6. PROPORTIONAL SCHEDULING (CRITICAL): The number of generated sessions MUST be strictly proportional to the actual volume of content added by the student. 
-   - If the student inputs only ONE single lesson or topic (e.g., "فيزياء - الباب الأول - شرح جديد"), generate a MAXIMUM of 1 to 2 focused sessions for it (e.g., one deep "شرح وفهم" session, and optionally one short "حل تدريبات" if appropriate). Do NOT artificially inflate the schedule into 5+ fragmented sessions (like error analysis, quick recap, etc.) for a single lesson.
+6. PROPORTIONAL SCHEDULING (CRITICAL): The number of generated sessions MUST be strictly proportional to the actual volume of content added by the student.
+    - If the student inputs only ONE single lesson or topic (e.g., "فيزياء - الباب الأول - شرح جديد"), generate a MAXIMUM of 1 to 2 focused sessions for it (e.g., one deep "شرح وفهم" session, and optionally one short "حل تدريبات" if appropriate). Do NOT artificially inflate the schedule into 5+ fragmented sessions (like error analysis, quick recap, etc.) for a single lesson.
    - Prioritize the core session type the student selected. If they marked it as "شرح جديد" (new explanation), focus the schedule entirely on deep understanding, NOT on unrelated tasks like error analysis for a lesson they haven't learned yet.
    - Only generate multiple, varied session types (practice, recap, error review) when the student has added a large volume of content (multiple lessons/chapters) or is doing comprehensive exam prep.
    - Respect realistic timing: The total time of the generated schedule should match the reasonable time required for the input content. Do not stretch a 2-hour lesson into a full 6-hour daily schedule unless the student explicitly added 6 hours worth of content.
+7. RESPECT DAILY COMMITMENTS: Analyze the "Daily Commitments" provided by the student. NEVER place a study session during sleep hours. Avoid placing sessions during meal times, gym, private lessons, or other fixed activities. Naturally work study sessions into the remaining free time blocks. Use the 'startTime' field in the session object to explicitly enforce these boundaries.
+8. DURATION PREFERENCE (CRITICAL): Check the student's "Plan Preference" (strict vs flexible).
+   - If "strict" (بومودورو ثابتة): You MUST use fixed, shorter Pomodoro sessions. Set durationMinutes to either 25 or 50. Break minutes should be 5 for a 25-min session, and 10 for a 50-min session.
+   - If "flexible" (مرنة): Use flexible session lengths based on the topic difficulty. Set durationMinutes between 45 and 90.
 ---
 Output Structure (ALL TEXT IN ARABIC):
 - scenario: Exactly one of "Last Night", "Extremely Pressured", "Limited Time", "Regaining Control"
@@ -78,7 +82,8 @@ Output Structure (ALL TEXT IN ARABIC):
   * id: string
   * title: session title in Arabic
   * subject: subject name in Arabic
-  * durationMinutes: integer duration (e.g., 30-90m based on mastery & energy)
+  * startTime: string (Optional. Format "HH:MM" 24h. Use this to explicitly set the start time of the session to avoid the student's daily commitments like sleep, meals, or other activities)
+  * durationMinutes: integer duration (If 'strict' preference, use 25 or 50. If 'flexible', use 45-90)
   * breakMinutes: break duration
   * focusType: specific method in Arabic
   * priority: "high" | "medium" | "low"
