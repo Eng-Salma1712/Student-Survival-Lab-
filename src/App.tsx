@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { StudentGoal, GamificationState, Badge, StudySession, UserIdentity, DiagnosisResult } from './types';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
@@ -217,6 +217,7 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
                   onSaveGoal={handleSaveGoal}
                 />
               } />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
 
