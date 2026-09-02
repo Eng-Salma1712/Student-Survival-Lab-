@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Zap, X, AlertTriangle, Clock, Target, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,8 +9,36 @@ interface RescueModeModalProps {
 
 export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handlePlanSelect = (plan: '1_month' | '48_hours' | '2_hours') => {
+    let prompt = '';
+    switch (plan) {
+      case '1_month':
+        prompt = 'أنا متأخر في المذاكرة منذ شهر تقريباً، ركز معايا بس على الأساسيات والأولويات المهمة، واديني خطة إنقاذ عاجلة.';
+        break;
+      case '48_hours':
+        prompt = 'عندي امتحان بعد 48 ساعة، عايز أسئلة متوقعة ومراجعة سريعة جداً للمواد المهمة.';
+        break;
+      case '2_hours':
+        prompt = 'معايا ساعتين بس قبل الامتحان، ركز معايا على أهم النقاط اللي بتتكرر في الامتحانات.';
+        break;
+    }
+    
+    onClose();
+    navigate('/coach', { state: { initialPrompt: prompt } });
+  };
+
+  const handleMainButtonClick = () => {
+    if (selectedPlan) {
+      handlePlanSelect(selectedPlan as any);
+    } else {
+      onClose();
+      navigate('/coach');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 dir-rtl animate-in fade-in duration-200" dir="rtl">
@@ -32,7 +60,10 @@ export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClos
         </div>
 
         <div className="space-y-3 mb-6">
-          <div className="p-4 border border-[#E5E5E5] rounded-xl bg-white hover:border-amber-500 transition-colors cursor-pointer" onClick={() => { onClose(); navigate('/coach'); }}>
+          <div 
+            className="p-4 border rounded-xl bg-white border-[#E5E5E5] hover:border-amber-500 transition-colors cursor-pointer"
+            onClick={() => handlePlanSelect('1_month')}
+          >
             <div className="flex items-center gap-3 mb-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
               <h3 className="font-bold text-[#2A2A2A] text-sm">إنقاذ متراكم شهر</h3>
@@ -40,7 +71,10 @@ export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClos
             <p className="text-xs text-[#6B6B6B]">التركيز على الأساسيات والأولويات فقط.</p>
           </div>
 
-          <div className="p-4 border border-[#E5E5E5] rounded-xl bg-white hover:border-amber-500 transition-colors cursor-pointer" onClick={() => { onClose(); navigate('/coach'); }}>
+          <div 
+            className="p-4 border rounded-xl bg-white border-[#E5E5E5] hover:border-amber-500 transition-colors cursor-pointer"
+            onClick={() => handlePlanSelect('48_hours')}
+          >
             <div className="flex items-center gap-3 mb-2">
               <Clock className="w-5 h-5 text-amber-500" />
               <h3 className="font-bold text-[#2A2A2A] text-sm">امتحان بعد 48 ساعة</h3>
@@ -48,7 +82,10 @@ export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClos
             <p className="text-xs text-[#6B6B6B]">أسئلة متوقعة ومراجعة سريعة جداً.</p>
           </div>
 
-          <div className="p-4 border border-[#E5E5E5] rounded-xl bg-white hover:border-amber-500 transition-colors cursor-pointer" onClick={() => { onClose(); navigate('/coach'); }}>
+          <div 
+            className="p-4 border rounded-xl bg-white border-[#E5E5E5] hover:border-amber-500 transition-colors cursor-pointer"
+            onClick={() => handlePlanSelect('2_hours')}
+          >
             <div className="flex items-center gap-3 mb-2">
               <Target className="w-5 h-5 text-amber-500" />
               <h3 className="font-bold text-[#2A2A2A] text-sm">طوارئ ساعتين</h3>
@@ -57,10 +94,14 @@ export const RescueModeModal: React.FC<RescueModeModalProps> = ({ isOpen, onClos
           </div>
         </div>
 
-        <button onClick={() => { onClose(); navigate('/coach'); }} className="w-full btn-primary py-3 text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white border-transparent">
+        <button 
+          onClick={handleMainButtonClick} 
+          className="w-full btn-primary py-3 text-sm flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white border-transparent"
+        >
           تحدث مع الرفيق لإنشاء الخطة <ArrowLeft className="w-4 h-4" />
         </button>
       </div>
     </div>
   );
 };
+

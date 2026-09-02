@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { UserIdentity, StudentGoal, ChatAttachment } from '../types';
 import {
   Send,
@@ -104,6 +104,7 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
   isFloatingDrawer = false,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const titleInfo = getTitleInfo(userIdentity);
   const studentName = userIdentity?.name || 'يا بطل';
   const collegeName = goal?.targetTitle || userIdentity?.collegeName || 'كلية الأحلام والقمة';
@@ -379,6 +380,23 @@ export const AICoachChat: React.FC<AICoachChatProps> = ({
     setMessages(session.messages);
     setShowHistory(false);
   };
+
+  const initialPromptRef = useRef(false);
+
+  useEffect(() => {
+    if (location.state?.initialPrompt && !initialPromptRef.current) {
+      initialPromptRef.current = true;
+      const prompt = location.state.initialPrompt;
+      
+      // Delay slightly to ensure component is fully mounted before triggering send
+      setTimeout(() => {
+        handleSendMessage(prompt);
+      }, 100);
+      
+      // Clean the state right away to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
 
   if (!isOpen) return null;

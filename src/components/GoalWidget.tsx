@@ -221,7 +221,7 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({
               </div>
             ) : (
               <button 
-                onClick={() => setIsEditing(true)}
+                onClick={() => setIsModalOpen(true)}
                 className="text-center bg-rose-50 px-3 py-2 rounded-xl border border-rose-100 hover:bg-rose-100 transition-colors"
               >
                 <div className="text-[10px] text-rose-600 font-bold uppercase tracking-wider">
